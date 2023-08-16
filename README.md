@@ -29,10 +29,11 @@ For ubuntu: sudo apt-get update\
             sudo apt-get install pip3
 
 
-### Multiple python installs\
+### Multiple python installs
 Check what version of python runs:\
   python3 -V\
-  python3.7 -V\
+  python3.7 -V
+  
 Then, install imageio & pillow manually\
   python3.7 -m pip install imageio\
   python3.7 -m pip install --upgrade imageio\
