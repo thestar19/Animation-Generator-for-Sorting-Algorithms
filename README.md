@@ -1,6 +1,6 @@
 # Sorting-Algorithms-GIF-Generator
 
-Originally created by LucasPilla, this is a fork of his project "Sorting Algorithms Visualizer" that instead generates GIF files of the sorting animations. Additional options are implemented to create better GIFs.
+Originally created by LucasPilla, this is a fork of his project "Sorting Algorithms Visualizer" that instead generates GIF files of sorting animations written entirely in python3. Additional options are implemented to create better GIFs.
 
 Original project: https://github.com/LucasPilla/Sorting-Algorithms-Visualizer
 
