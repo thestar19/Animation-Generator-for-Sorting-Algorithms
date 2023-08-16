@@ -18,7 +18,7 @@ Contributions are welcome. This project is still very new so much work is needed
 
 ## Using the application
 Right now probably limited to Linux
-- Clone GitHub repository `git clone (https://github.com/thestar19/Sorting-Algorithm-GIF-Generator.git)`
+- Clone GitHub repository `git clone https://github.com/thestar19/Sorting-Algorithm-GIF-Generator.git`
 - Install requirements: `pip3 install -r requirements.txt`
 - Run: `python3 src/main.py`
 
