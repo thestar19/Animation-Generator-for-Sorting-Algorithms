@@ -1,24 +1,22 @@
-# Sorting-Algorithms-Visualizer [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Amazing%20tool%20for%20visualising%20Sorting%20Algorithms%20in%20Python&url=https://github.com/LucasPilla/Sorting-Algorithms-Visualizer&via=&hashtags=educational,developers)
+# Sorting-Algorithms-GIF-Generator
 
-Program made with Python and Pygame module for visualizing sorting algorithms \
+Originally created by LucasPilla, this is a fork of his project "Sorting Algorithms Visualizer" that instead generates GIF files of the sorting animations. Additional options are implemented to create better GIFs.
+
+Original project: https://github.com/LucasPilla/Sorting-Algorithms-Visualizer
+
+Program made with Python and Pygame module for generating GIFs of sorting algorithms \
 Support this project by leaving a :star:
 
 ## Program preview
 
-!["Program Preview"](res/preview.gif)
+!["Program Preview"](sorting.gif)
 
-## Some Algorithms
 
-| | | |
-|:-------------------------:|:-------------------------:|:-------------------------:|
-|![](https://github.com/LucasPilla/Sorting-Algorithms-Visualizer/blob/master/res/bubble_sort.gif?raw=true)  Bubble sort |  ![](https://github.com/LucasPilla/Sorting-Algorithms-Visualizer/blob/master/res/bucket_sort.gif?raw=true) Bucket sort |![](https://github.com/LucasPilla/Sorting-Algorithms-Visualizer/blob/master/res/cocktail_sort.gif?raw=true) Cocktail sort |
-|![](https://github.com/LucasPilla/Sorting-Algorithms-Visualizer/blob/master/res/counting_sort.gif?raw=true) Counting sort | ![](https://github.com/LucasPilla/Sorting-Algorithms-Visualizer/blob/master/res/heap_sort.gif?raw=true) Heap sort |![](https://github.com/LucasPilla/Sorting-Algorithms-Visualizer/blob/master/res/insertion_sort.gif?raw=true) Insertion sort |
-|![](https://github.com/LucasPilla/Sorting-Algorithms-Visualizer/blob/master/res/merge_sort.gif?raw=true) Merge sort | ![](https://github.com/LucasPilla/Sorting-Algorithms-Visualizer/blob/master/res/quick_sort.gif?raw=true) Quick sort |![](https://github.com/LucasPilla/Sorting-Algorithms-Visualizer/blob/master/res/selection_sort.gif?raw=true) Selection sort |
+## Contribute
+Contributions are welcome. This project is still very new so much work is needed.
+:exclamation: Feel free to open an issue if you have some problem :exclamation:
 
 ## Using the application
-
-  :exclamation: Feel free to open an issue if you have some problem :exclamation:
-
-- Clone GitHub repository `git clone https://github.com/LucasPilla/Sorting-Algorithms-Visualizer.git`
+- Clone GitHub repository `git clone (https://github.com/thestar19/Sorting-Algorithm-GIF-Generator.git)`
 - Install requirements: `pip3 install -r requirements.txt`
 - Run: `python3 src/main.py`
