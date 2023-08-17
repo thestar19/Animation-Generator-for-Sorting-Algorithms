@@ -20,6 +20,8 @@ red = (255, 50, 50)
 black = (0, 0, 0)
 blue = (50, 50, 255)
 
+#Global settings
+someFactor = 1
 
 class Box:
     def __init__(self, rect):
@@ -42,6 +44,37 @@ class justText(Box):
         label = baseFont.render(self.text, True, self.color)
         screen.blit(label, (self.rect.x + (self.rect.w - label.get_width()) / 2, self.rect.y - 32))
         #pygame.draw.rect(screen, self.color, self.rect, 3)
+
+
+class BoxWithText(Box):
+    def __init__(self, name,rect, text1,text2=""):
+        super().__init__(rect)
+        self.text1 = text1
+        self.text2 = text2
+        self.text = text1
+        self.name = name
+    def draw(self):
+        #Draw button
+        surface = baseFont.render(self.text, True, grey)
+        screen.blit(surface, (self.rect.x + 10, self.rect.y + 10))
+        #Draw txt above
+        label = baseFont.render(self.name, True, grey)
+        screen.blit(label, (self.rect.x + (self.rect.w - label.get_width()) / 2, self.rect.y - 32))
+        pygame.draw.rect(screen, grey, self.rect, 3)
+
+    def update(self):
+        global someFactor
+        super().update()
+        if self.isActive and self.clicked:
+            if len(self.text2) > 0:
+                if self.text == self.text1:
+                    self.text = self.text2
+                    someFactor = 10
+                    delayBox.update(None)
+                else:
+                    self.text = self.text1
+                    someFactor = 1
+                    delayBox.update(None)
 
 
 class InputBox(Box):
@@ -95,16 +128,17 @@ class SlideBox(InputBox):
         pygame.draw.line(screen, self.color, (self.value, self.rect.y + 5), (self.value, self.rect.y + 45), 12)
 
     def update(self, event):
+        global someFactor
+        global delay
         super().update()
         previousStart = self.start
         self.rect.x = sizeBox.rect.x + sizeBox.rect.w + 20
         self.start  = self.rect.x + 6
         self.end    = self.rect.x + self.rect.w - 6
         self.value += self.start - previousStart
-        delay = self.value
-        
+        delay = int(self.value) * someFactor
+        self.name = "Delay:" + str(int(self.value) * someFactor) + "ms"
         if self.isActive:
-            self.name = "Delay:" + str(int(self.value)) + "ms"
             if self.clicked:
                 if self.start <= self.mousePos[0] <= self.end: self.value = self.mousePos[0]
         
@@ -288,7 +322,7 @@ class DropdownBox(InputBox):
 
 # Global Variables
 numBars = 0
-delay   = 0
+delay   = 100
 do_sorting = False
 show_advanced = False
 paused = False
@@ -305,6 +339,7 @@ playButton  = ButtonBox('res/playButton.png', (800, 440, 50, 50))
 stopButton = ButtonBox('res/stopButton.png', (800, 440, 50, 50))
 advancedText = justText("--------------------------------Advanced options--------------------------------", grey, (400, 560, 100, 50))
 fpsBox = TextBox('FPS', grey, (30, 620, 50, 50), "30")
+delayX10box = BoxWithText("Increase delay",(160, 620, 60, 60), "x10","x1")
 #showAdvancedButton = ButtonBox('res/playButton.png', (1000, 440, 50, 50),"show_advancedButton")
 #hideAdvancedButton = ButtonBox('res/stopButton.png', (1000, 440, 50, 50),"hide_advancedButton")
 #gifCheckBox = CheckBox('res/gifButton.png','res/gifButton2.png',"Output GIF", (500,440,50,50))
@@ -316,6 +351,7 @@ def updateWidgets(event):
     delayBox.update(event)
     algorithmBox.update()
     fpsBox.update(event)
+    delayX10box.update()
     #logBox.update(event)
     #gifCheckBox.update()
     if do_sorting:
@@ -352,6 +388,7 @@ def drawBottomMenu():
     algorithmBox.draw()
     advancedText.draw()
     fpsBox.draw()
+    delayX10box.draw()
     #gifCheckBox.draw()
     if do_sorting:
         stopButton.draw()
@@ -394,3 +431,4 @@ def drawInterface(array, redBar1, redBar2, blueBar1, blueBar2, **kwargs):
         
     drawBottomMenu()
     pygame.display.update()
+
