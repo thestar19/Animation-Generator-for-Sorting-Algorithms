@@ -36,19 +36,22 @@ except:
     show_trace()
     raise ModuleNotFoundError("Could not access imageio.v3")
 
-
-# Declared in display.py
-# 1. global variables : numBars, delay, do_sorting, paused, timer_space_bar
-# 2. widgets : sizeBox, delayBox, algorithmBox, playButton, stopButton
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
 textLog = []
 textLogUpdate = True
+DEBUG = False
 #Todo:
-# Add time estimate
 # Make better number of pictures sorter
-# Create own git page with reference
-# Extend delay adjust to allow for more values than 0.1-0.2
-# Add more file types, eg MP4
 # Add option to print numbers in "bars"
 # Add option for with/without menu visible
 # Add option for GIF optimizatio
@@ -57,6 +60,12 @@ textLogUpdate = True
 #Known bugs
 # Loops & start button does not move as size increases
 # Loops box runs into log upon extreme numbers
+
+#printL types:
+# 1 = normal log message
+# 2 = reserved for progress indication
+# 3 = Warning message
+# 4 = Reserved for debug use
 
 
 #Generating gifs requires placing files in subfolder and then loading them.
@@ -74,9 +83,13 @@ def deleteTempFiles():
             os.rmdir("pictures/" + directories)
     except:
         raise EIO("Could not delete files in subfolder!")
-#types:
-#1=white text, just usual log
-#2=progress bar change
+
+def deleteExistingSortingGif():
+    try:
+        os.remove("sorting.gif")
+        printL(1, "Removed previous GIF")
+    except:
+        printL(3,"Could not remove previous sorting.gif")
 
 def printL(type,addition):
     global textLog
@@ -102,7 +115,7 @@ def printProgressBar(currentValue):
     print("""]""")
 
 
-0
+
 def printSign():
     print("""
  _______         _______         _______ 
@@ -159,12 +172,15 @@ def updateDisplay():
         printProgressBar(maxProgress)
         print("--------------------------------------------")
     for type,value in textLog:
-        if type != 2:
+        if type == 3:
+            print(bcolors.WARNING + "Warning:" + value + bcolors.ENDC)
+        if type == 1:
             print(value)
+        if type == 4 and DEBUG:
+            print(bcolors.OKBLUE + "Debug:" + value + bcolors.ENDC)
 
 def CreateGIF(counter,SCREENSHOT_FILENAME):
     updateDisplay()
-    ex = 5
     #Idea is that pictures are generated with numbers 0 to some MAX
     printL(1,"Trying to generate GIF, this may freeze the program and take a while")
     #Check for reasonable inputs
@@ -187,15 +203,25 @@ def CreateGIF(counter,SCREENSHOT_FILENAME):
     #This will start to load in individual pictures into gif engine
     numberOfLoops = 0
     if display.loopBox.text != "Inf":
-        numberOfLoops = int(display.loopBox.getText(type(8)))
+        numberOfLoops = int(display.loopBox.text)
+    deleteExistingSortingGif()
     printL(1, "GIF settings:" + str(display.loopBox.text) + " loops, " + str(display.fpsBox.text) + "fps")
     newGif = imageio.get_writer('sorting.gif',format='GIF-PIL',mode='I',fps=int(display.fpsBox.text),loop=numberOfLoops)
 
     #if delay > 0, add ratio for that delay
     delay_ratio = 1
-    if int(display.delay*1000/30) > 0:
-        delay_ratio = int((display.delay*1000)/30)
-    printL(1,("Adding " + str(display.delay) + " ms delay for each image in GIF"))
+    possible_delay_ratio = int((display.delay/(1000/int(display.fpsBox.text))))
+    if possible_delay_ratio > 1:
+        delay_ratio = possible_delay_ratio
+    printL(1,("Adding " + str(display.delay) + "ms delay for each image in GIF"))
+    printL(4,"Accurate gif settings is applied \n Therefore every frame from animation will be in GIF.")
+    printL(4,"This increases time to generate, but also more accurately displays how sorting function works.")
+    printL(4, "Total number of recorded images:" + str(len(fileNames)))
+    printL(4, "Delay ratio is:" + str(delay_ratio))
+    printL(4, "Bar is:" + str(possible_delay_ratio))
+    printL(1,"Total number of images generated is:" + str(int(len(fileNames) * delay_ratio)))
+    if display.delay > 1000:
+        printL(3,"Delay over 1sec will result in large file sizes \n and a very long time to generate. ")
     totalRunTime = ((len(fileNames) * delay_ratio)/int(display.fpsBox.text))*0.9
     printL(1,"Approximate GIF runtime is " + str(totalRunTime) + "s")
     try:
@@ -287,7 +313,7 @@ def main():
             display.updateWidgets(event)
 
         #display.delay = (display.delayBox.value-display.delayBox.rect.x-6)/1000 # delay is in ms
-        display.delay = (display.delayBox.value)/1000 # delay is in ms
+        #display.delay = (display.delayBox.value)/1000 # delay is in ms
 
         if display.playButton.isActive: # play button clicked
             try:
@@ -375,4 +401,8 @@ def main():
             display.drawInterface(numbers, -1, -1, -1, -1, greenRows=a_set)
 
 if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "True" or sys.argv[1] == "true":
+            DEBUG = True
     main()
+
