@@ -22,6 +22,8 @@ Right now probably limited to Linux
 - Install requirements: `pip3 install -r requirements.txt`
 - Run: `python3 src/main.py`
 
+- To output extra info, run `python3 src/main.py true`
+
 ## Common troubleshooting steps:
 ### Install pip
 For ubuntu: sudo apt-get update\
