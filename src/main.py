@@ -57,10 +57,6 @@ DEBUG = False
 # Add option for GIF optimizatio
 # Move loops to advanced options
 
-#Known bugs
-# Loops & start button does not move as size increases
-# Loops box runs into log upon extreme numbers
-
 #printL types:
 # 1 = normal log message
 # 2 = reserved for progress indication
@@ -224,15 +220,17 @@ def CreateGIF(counter,SCREENSHOT_FILENAME):
         printL(3,"Delay over 1sec will result in large file sizes \n and a very long time to generate. ")
     totalRunTime = ((len(fileNames) * delay_ratio)/int(display.fpsBox.text))*0.9
     printL(1,"Approximate GIF runtime is " + str(totalRunTime) + "s")
+
     try:
         for (counter,filename) in enumerate(fileNames):
             updateDisplay()
             #images.append(imageio.v2.imread(filename))
+            newImage = imageio.v3.imread(filename)
             for i in range(0,delay_ratio):
-                newGif.append_data(imageio.v2.imread(filename))
+                newGif.append_data(newImage)
             printProgress(int(((counter)/len(fileNames))*100))
     except:
-        raise EIO("Tried to create GIF, did not find sample pictures")
+        raise Exception("Tried to create GIF, something went wrong ")
     printProgress(100)
     #Output gif
     #imageio.mimsave('sorting.gif', images, format = 'GIF-PIL', fps = 100)
@@ -261,7 +259,10 @@ def getMaxNumber(files):
     return currentMax
 
 def takePicture(SCREENSHOT_FILENAME,GIF_picture_counter,screenshot):
-    pygame.image.save(screenshot, "pictures/screenshot" + str(GIF_picture_counter) + ".jpg")
+    if not display.includeSettingsInOutput:
+        pygame.image.save(screenshot, "pictures/screenshot" + str(GIF_picture_counter) + ".jpg")
+    else:
+        pygame.image.save(display.screen, "pictures/screenshot" + str(GIF_picture_counter) + ".jpg")
 
 def createPicturesFolder():
     myDir = []
@@ -279,20 +280,19 @@ def main():
     updateDisplay()
     printL(1,"Loading complete")
     SCREENSHOT_FILENAME = "pictures/screenshot" #+ a counter number + JPG
-    GIF_WINDOW_SIZE = (900, 400)
     
     numbers = []
     running = True
     display.algorithmBox.add_options(list(algorithmsDict.keys()))
 
-    current_alg = None
     alg_iterator = None
-
-    timer_delay = time()
     
     #One keeps track of how many files have been created, the other how many total images
     GIF_picture_counter = 0
     GIF_skip_image_counter = 0
+
+    #Used for rendering window
+    GIF_WINDOW_SIZE = (900, 400)
     
     #Just to make sure nothing from prev runs is left
     deleteTempFiles()
@@ -311,9 +311,6 @@ def main():
                 display.timer_space_bar = time()
 
             display.updateWidgets(event)
-
-        #display.delay = (display.delayBox.value-display.delayBox.rect.x-6)/1000 # delay is in ms
-        #display.delay = (display.delayBox.value)/1000 # delay is in ms
 
         if display.playButton.isActive: # play button clicked
             try:
@@ -350,8 +347,8 @@ def main():
                 GIF_skip_image_counter = 0
                 
         #GIF needs it's own thing
-        #screenshot = pygame.Surface(GIF_WINDOW_SIZE)
-        #screenshot.blit(display.screen, (0,0))
+        screenshot = pygame.Surface(GIF_WINDOW_SIZE)
+        screenshot.blit(display.screen, (0,0))
         
         if display.do_sorting and not display.paused: # sorting animation
             try:
@@ -363,12 +360,12 @@ def main():
                         #If less then 300, take every size/100 picture
                         #ergo size = 100 => every picture, size = 300 => every third picture
                         if int(display.sizeBox.text) <= 200:
-                            takePicture(SCREENSHOT_FILENAME,GIF_picture_counter,display.screen)
+                            takePicture(SCREENSHOT_FILENAME,GIF_picture_counter,screenshot)
                             GIF_picture_counter +=1
                         #If size > 300, then we need to take draastically less pictures
                         else:
                             if int(GIF_skip_image_counter) % int(10) == 0:
-                                takePicture(SCREENSHOT_FILENAME,GIF_picture_counter,display.screen)
+                                takePicture(SCREENSHOT_FILENAME,GIF_picture_counter,screenshot)
                                 GIF_picture_counter +=1
                                 GIF_skip_image_counter = 0
                             GIF_skip_image_counter +=1
@@ -382,11 +379,11 @@ def main():
                     a_set = set(range(display.numBars))
                     display.drawInterface(numbers, -1, -1, -1, -1, greenRows=a_set)
                     #Make sure they are saved for a second
-                    takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, display.screen)
+                    takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, screenshot)
                     GIF_picture_counter += 1
-                    takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, display.screen)
+                    takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, screenshot)
                     GIF_picture_counter += 1
-                    takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, display.screen)
+                    takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, screenshot)
                     GIF_picture_counter += 1
                     # Call function for GIF
                     CreateGIF(GIF_picture_counter,SCREENSHOT_FILENAME)
@@ -405,4 +402,5 @@ if __name__ == '__main__':
         if sys.argv[1] == "True" or sys.argv[1] == "true":
             DEBUG = True
     main()
+
 
