@@ -8,7 +8,7 @@ pygame.init()
 # Display settings
 windowSize = (900, 800)
 screen = pygame.display.set_mode(windowSize)
-pygame.display.set_caption('Sorting Algorithms GIF Generator')
+pygame.display.set_caption('Sorting Algorithm Animation Generator')
 
 # Font
 baseFont = pygame.font.SysFont('Arial', 24)
@@ -20,8 +20,6 @@ red = (255, 50, 50)
 black = (0, 0, 0)
 blue = (50, 50, 255)
 
-# Global settings
-someFactor = 1
 
 
 class Box:
@@ -67,17 +65,24 @@ class BoxWithText(Box):
 
     def update(self):
         global someFactor
+        global includeSettingsInOutput
         super().update()
         if self.isActive and self.clicked:
             if len(self.text2) > 0:
                 if self.text == self.text1:
                     self.text = self.text2
-                    someFactor = 10
-                    delayBox.update(None)
+                    if self.name == delayX10box.name:
+                        someFactor = 10
+                        delayBox.update(None)
+                    if self.name == includeSettingsInGifBox.name: includeSettingsInOutput = True
+
                 else:
                     self.text = self.text1
-                    someFactor = 1
-                    delayBox.update(None)
+                    if self.name == delayX10box.name:
+                        someFactor = 10
+                        delayBox.update(None)
+                    if self.name == includeSettingsInGifBox.name: includeSettingsInOutput = False
+
 
 
 class InputBox(Box):
@@ -324,6 +329,9 @@ do_sorting = False
 show_advanced = False
 paused = False
 timer_space_bar = 0
+# Global settings
+someFactor = 1
+includeSettingsInOutput = False
 
 # Input Boxes
 sizeBox = TextBox('Size', grey, (30, 440, 50, 50), '10')
@@ -336,11 +344,7 @@ advancedText = justText("--------------------------------Advanced options-------
                         (400, 560, 100, 50))
 fpsBox = TextBox('FPS', grey, (30, 620, 50, 50), "30")
 delayX10box = BoxWithText("Increase delay", (160, 620, 60, 60), "x10", "x1")
-
-
-# showAdvancedButton = ButtonBox('res/playButton.png', (1000, 440, 50, 50),"show_advancedButton")
-# hideAdvancedButton = ButtonBox('res/stopButton.png', (1000, 440, 50, 50),"hide_advancedButton")
-# gifCheckBox = CheckBox('res/gifButton.png','res/gifButton2.png',"Output GIF", (500,440,50,50))
+includeSettingsInGifBox = BoxWithText("Include settings in GIF", (380, 620, 100, 60), "Include", "Exclude")
 
 
 def updateWidgets(event):
@@ -350,17 +354,11 @@ def updateWidgets(event):
     algorithmBox.update()
     fpsBox.update(event)
     delayX10box.update()
-    # logBox.update(event)
-    # gifCheckBox.update()
+    includeSettingsInGifBox.update()
     if do_sorting:
         stopButton.update()
     else:
         playButton.update()
-
-    # if not show_advanced:
-    #    showAdvancedButton.update()
-    # else:
-    #    hideAdvancedButton.update()
 
 
 def drawBars(array, redBar1, redBar2, blueBar1, blueBar2, greenRows={}, **kwargs):
@@ -385,22 +383,16 @@ def drawBottomMenu():
     '''Draw the menu below the bars'''
     sizeBox.draw()
     loopBox.draw()
-    # logBox.draw()
     delayBox.draw()
     algorithmBox.draw()
     advancedText.draw()
     fpsBox.draw()
     delayX10box.draw()
-    # gifCheckBox.draw()
+    includeSettingsInGifBox.draw()
     if do_sorting:
         stopButton.draw()
     else:
         playButton.draw()
-
-    # if not show_advanced:
-    #    showAdvancedButton.draw()
-    # else:
-    #    hideAdvancedButton.draw()
 
 
 def draw_rect_alpha(surface, color, rect):
@@ -427,11 +419,12 @@ def drawInterface(array, redBar1, redBar2, blueBar1, blueBar2, **kwargs):
         draw_rect_alpha(screen, (255, 255, 0, 127), [(850 / 2) + 10, 150 + 10, 10, 50])
         draw_rect_alpha(screen, (255, 255, 0, 127), [(850 / 2) + 40, 150 + 10, 10, 50])
 
-    elif not paused and (time() - timer_space_bar) < 0.5:
+    elif not paused and (time() - timer_space_bar) < 0.2:
         x, y = (850 / 2), 150
         draw_polygon_alpha(screen, (150, 255, 150, 127),
                            ((x + 10, y + 10), (x + 10, y + 50 + 10), (x + 50, y + 25 + 10)))
 
     drawBottomMenu()
     pygame.display.update()
+
 
