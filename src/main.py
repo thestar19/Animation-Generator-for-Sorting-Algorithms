@@ -1,40 +1,24 @@
-
-
+import sys
 
 #Define basic trace_function
 def show_trace():
     print("An error has occured, printing useful info:")
     print(sys.version)
     print(sys.version_info)
+    sys.exit(0)
 
 #Carefully import stuff
 try:
-    import sys
     from random import randint
     from time import time
     from algs import algorithmsDict
-except:
-    show_trace()
-    raise ImportError("Could not access Sys, random, time or programs sorting alg")
-
-try:
-    import pygame
-except:
-    show_trace()
-    raise ImportError("Pygame is not installed!")
-
-try:
     import display as display
-    import os
-    import gc
-except:
+    from os import rmdir, walk, getcwd, system, mkdir
+    from gc import collect
+    from imageio.v3 import imread
+    import pygame
+except ImportError:
     show_trace()
-    raise ModuleNotFoundError("Could not access display, os or gc")
-try:
-    import imageio.v3
-except:
-    show_trace()
-    raise ModuleNotFoundError("Could not access imageio.v3")
 
 class bcolors:
     HEADER = '\033[95m'
@@ -56,6 +40,7 @@ DEBUG = False
 # Add option for with/without menu visible
 # Add option for GIF optimizatio
 # Move loops to advanced options
+#
 
 #printL types:
 # 1 = normal log message
@@ -225,7 +210,7 @@ def CreateGIF(counter,SCREENSHOT_FILENAME):
         for (counter,filename) in enumerate(fileNames):
             updateDisplay()
             #images.append(imageio.v2.imread(filename))
-            newImage = imageio.v3.imread(filename)
+            newImage = imread(filename)
             for i in range(0,delay_ratio):
                 newGif.append_data(newImage)
             printProgress(int(((counter)/len(fileNames))*100))
