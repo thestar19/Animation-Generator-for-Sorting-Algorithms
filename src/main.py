@@ -1,10 +1,11 @@
 import sys
 
 #Define basic trace_function
-def show_trace():
+def show_trace(event=""):
     print("An error has occured, printing useful info:")
     print(sys.version)
     print(sys.version_info)
+    print(event)
     sys.exit(0)
 
 #Carefully import stuff
@@ -13,13 +14,16 @@ try:
     from time import time
     from algs import algorithmsDict
     import display as display
-    from os import rmdir, walk, getcwd, system, mkdir
+    from os import rmdir, walk, getcwd, system, mkdir, remove
     from gc import collect
-    from imageio.v3 import imread
+    #from imageio.v3 import imread, imopen
+    from PIL import Image
     import pygame
 except ImportError:
     show_trace()
 
+
+#Global variables
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -34,13 +38,6 @@ class bcolors:
 textLog = []
 textLogUpdate = True
 DEBUG = False
-#Todo:
-# Make better number of pictures sorter
-# Add option to print numbers in "bars"
-# Add option for with/without menu visible
-# Add option for GIF optimizatio
-# Move loops to advanced options
-#
 
 #printL types:
 # 1 = normal log message
@@ -55,35 +52,43 @@ def deleteTempFiles():
     try:
         myFiles = []
         myDir = []
-        for pathnames,dirnames,filenames in os.walk("pictures"):
+        for pathnames,dirnames,filenames in walk("pictures"):
             myFiles.extend(filenames)
             myDir.extend(dirnames)
         for files in myFiles:
-            os.remove("pictures/" + files)
+            remove("pictures/" + files)
         for directories in myDir:
-            os.rmdir("pictures/" + directories)
+            rmdir("pictures/" + directories)
     except:
         raise EIO("Could not delete files in subfolder!")
 
+# For some uses, having an existing sorting.gif file is a problem
+# Therefore, this function deletes that file using os lib
 def deleteExistingSortingGif():
     try:
-        os.remove("sorting.gif")
+        remove("sorting.gif")
         printL(1, "Removed previous GIF")
     except:
         printL(3,"Could not remove previous sorting.gif")
 
+#Call function with type according to above (eg 0 for normal log)
+# and a string with whatever should be added to log
 def printL(type,addition):
     global textLog
     global textLogUpdate
     textLogUpdate = True
     textLog.append((type,addition))
 
+# Function that correctly inserts new progress item into log
 def printProgress(progress):
     global textLog
     global textLogUpdate
     textLogUpdate = True
-    textLog.insert(0,(2,progress))
+    #Insert at pos 0
+    textLog.insert(0,(2, progress))
 
+# Prints progress bar, only to be called if
+# in log values of type 2 exists and terminal is clear
 def printProgressBar(currentValue):
     print("Progress:" +  str(currentValue) + "%")
     print("""[""",end="")
@@ -94,8 +99,6 @@ def printProgressBar(currentValue):
     for i in range(0,20-progressCounter):
         print("""·""", end="")
     print("""]""")
-
-
 
 def printSign():
     print("""
@@ -108,14 +111,7 @@ def printSign():
 /\____) |       | )   ( |       | (___) |
 \_______)       |/     \|       (_______)
                                          """)
-
-def findType(findType):
-    global textLog
-    for type,value in textLog:
-        if type == findType:
-            return True
-    return False
-
+# Given a type, removes all entries of that type from log
 def deleteType(theType):
     global textLog
     counter = 0
@@ -128,15 +124,17 @@ def deleteType(theType):
             counter = counter-3
         counter +=1
 
-
+# Function that clears terminal and write new info.
+# To activate, set textLogUpdate = True, usually it will run shortly
 def updateDisplay():
     global textLog
     global textLogUpdate
+    # Without this, much resources would be wasted on rewriting log terminal display
     if not textLogUpdate:
         return -1
     textLogUpdate = False
     #runTime = time.strftime("%H:%M:%S", time.localtime(time.time() - startUpTime - 60 * 60))
-    os.system("clear")
+    system("clear")
     printSign()
     #print(str(runTime))
     if len(textLog) > 20:
@@ -153,13 +151,14 @@ def updateDisplay():
         printProgressBar(maxProgress)
         print("--------------------------------------------")
     for type,value in textLog:
-        if type == 3:
-            print(bcolors.WARNING + "Warning:" + value + bcolors.ENDC)
         if type == 1:
             print(value)
+        if type == 3:
+            print(f"{bcolors.WARNING} Warning: {value} {bcolors.ENDC}")
         if type == 4 and DEBUG:
-            print(bcolors.OKBLUE + "Debug:" + value + bcolors.ENDC)
+            print(f"{bcolors.OKBLUE} Debug: {value} {bcolors.ENDC}")
 
+# Create GIF using existing files
 def CreateGIF(counter,SCREENSHOT_FILENAME):
     updateDisplay()
     #Idea is that pictures are generated with numbers 0 to some MAX
@@ -179,62 +178,66 @@ def CreateGIF(counter,SCREENSHOT_FILENAME):
     #Find max
     fileNames = [] #Okay, let's start preparing for GIF
     for i in range(0,counter):
-        fileNames.append(SCREENSHOT_FILENAME + str(i) + ".jpg")
+        fileNames.append(f"{SCREENSHOT_FILENAME}{str(i)}.jpg")
     images = []
     #This will start to load in individual pictures into gif engine
     numberOfLoops = 0
     if display.loopBox.text != "Inf":
         numberOfLoops = int(display.loopBox.text)
     deleteExistingSortingGif()
-    printL(1, "GIF settings:" + str(display.loopBox.text) + " loops, " + str(display.fpsBox.text) + "fps")
-    newGif = imageio.get_writer('sorting.gif',format='GIF-PIL',mode='I',fps=int(display.fpsBox.text),loop=numberOfLoops)
-
-    #if delay > 0, add ratio for that delay
-    delay_ratio = 1
-    possible_delay_ratio = int((display.delay/(1000/int(display.fpsBox.text))))
-    if possible_delay_ratio > 1:
-        delay_ratio = possible_delay_ratio
-    printL(1,("Adding " + str(display.delay) + "ms delay for each image in GIF"))
-    printL(4,"Accurate gif settings is applied \n Therefore every frame from animation will be in GIF.")
-    printL(4,"This increases time to generate, but also more accurately displays how sorting function works.")
-    printL(4, "Total number of recorded images:" + str(len(fileNames)))
-    printL(4, "Delay ratio is:" + str(delay_ratio))
-    printL(4, "Bar is:" + str(possible_delay_ratio))
-    printL(1,"Total number of images generated is:" + str(int(len(fileNames) * delay_ratio)))
-    if display.delay > 1000:
-        printL(3,"Delay over 1sec will result in large file sizes \n and a very long time to generate. ")
-    totalRunTime = ((len(fileNames) * delay_ratio)/int(display.fpsBox.text))*0.9
-    printL(1,"Approximate GIF runtime is " + str(totalRunTime) + "s")
-
-    try:
-        for (counter,filename) in enumerate(fileNames):
+    printL(1, f"GIF settings:{str(display.loopBox.text)} loops,{str(display.fpsBox.text)}fps")
+    #newGif = get_writer('sorting.gif',format='GIF-PIL',mode='I',fps=int(display.fpsBox.text),loop=numberOfLoops)
+    #with PIL.open('sorting.gif', mode="w", format="GIF", duration=int(display.delay), loop=numberOfLoops) as newGif:
+    with Image.new("RGB",(900,400)) as newGif:
+        #if delay > 0, add ratio for that delay
+        delay_ratio = 1
+        possible_delay_ratio = int((display.delay/(1000/int(display.fpsBox.text))))
+        if False:
+            delay_ratio = possible_delay_ratio
+        printL(1,f"Adding {str(display.delay)} ms delay for each image in GIF")
+        printL(4,"Accurate gif settings is applied \n Therefore every frame from animation will be in GIF.")
+        printL(4,"This increases time to generate, but also more accurately displays how sorting function works.")
+        printL(4, f"Total number of recorded images: {str(len(fileNames))}")
+        printL(4, "Delay ratio is:" + str(delay_ratio))
+        printL(4, "Bar is:" + str(possible_delay_ratio))
+        printL(1,f"Total number of images generated is: {str(int(len(fileNames) * delay_ratio))}")
+        if display.delay > 1000:
+            printL(3,"Delay over 1sec will result in large file sizes \n and a very long time to generate. ")
+        #totalRunTime = ((len(fileNames) * delay_ratio)/int(display.fpsBox.text))*0.9
+        #printL(1,f"Approximate GIF runtime is {str(totalRunTime)}s")
+        updateDisplay()
+        try:
+            allImages = []
+            for (counter,filename) in enumerate(fileNames):
+                if counter % 5 == 1:
+                    updateDisplay()
+                allImages.append(Image.open(filename))
+                printProgress(int(((counter) / len(fileNames)) * 100))
+            newGif.save("sorting.gif",save_all = True, append_images = allImages, duration = int(display.delay),loop = numberOfLoops)
+        except Exception(event):
+            printL(4,"Tried to create GIF, something went wrong")
+            printL(4,"Terminating program")
             updateDisplay()
-            #images.append(imageio.v2.imread(filename))
-            newImage = imread(filename)
-            for i in range(0,delay_ratio):
-                newGif.append_data(newImage)
-            printProgress(int(((counter)/len(fileNames))*100))
-    except:
-        raise Exception("Tried to create GIF, something went wrong ")
-    printProgress(100)
-    #Output gif
-    #imageio.mimsave('sorting.gif', images, format = 'GIF-PIL', fps = 100)
-    #Del latest list, this does NOT decrease current RAM usage, 
-    #but makes next round use the same memory area instead
-    newGif.close()
-    printL(1,("Cleaning up remaining files"))
-    del fileNames
-    for item in images:
-        del item
-    del images
-    gc.collect()
-    printL(1,("GIF generation complete as sorting.gif"))
-    #Delete all files in folder
-    deleteTempFiles()
-    deleteType(2)
-    updateDisplay()
+            show_trace(event)
+        printProgress(100)
+        #Output gif
+        #imageio.mimsave('sorting.gif', images, format = 'GIF-PIL', fps = 100)
+        #Del latest list, this does NOT decrease current RAM usage,
+        #but makes next round use the same memory area instead
+        printL(1,("Cleaning up remaining files"))
+        del fileNames
+        for item in images:
+            del item
+        del images
+        del allImages
+        collect()
+        printL(1,("GIF generation complete as sorting.gif"))
+        #Delete all files in folder
+        deleteTempFiles()
+        deleteType(2)
+        updateDisplay()
     
-    
+#Given a list of filenames, it returns what number the highest file has.
 def getMaxNumber(files):
     currentMax  = -1
     for item in files:
@@ -243,21 +246,25 @@ def getMaxNumber(files):
             currentMax = myNumber
     return currentMax
 
+#Given a picture counter & screenshot item, takes and saves a picture of animation
 def takePicture(SCREENSHOT_FILENAME,GIF_picture_counter,screenshot):
     if not display.includeSettingsInOutput:
-        pygame.image.save(screenshot, "pictures/screenshot" + str(GIF_picture_counter) + ".jpg")
+        pygame.image.save(screenshot, f"{SCREENSHOT_FILENAME}{str(GIF_picture_counter)}.jpg")
     else:
-        pygame.image.save(display.screen, "pictures/screenshot" + str(GIF_picture_counter) + ".jpg")
+        pygame.image.save(display.screen, f"{SCREENSHOT_FILENAME}{str(GIF_picture_counter)}.jpg")
 
+# We need a place to write pictures currently
+# Yes, this is bad design.
+# Checks if picture folder exists, and if not it is created.
 def createPicturesFolder():
     myDir = []
-    for pathnames,dirnames,filenames in os.walk(os.getcwd()):
+    for pathnames,dirnames,filenames in walk(getcwd()):
             myDir.extend(dirnames)
     for directory in myDir:
         if directory == "pictures":
             return -1
     try:
-        os.mkdir("pictures")
+        mkdir("pictures")
     except:
         raise Exception("Could not create pictures folder")
     

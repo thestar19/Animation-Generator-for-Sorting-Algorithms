@@ -79,7 +79,7 @@ class BoxWithText(Box):
                 else:
                     self.text = self.text1
                     if self.name == delayX10box.name:
-                        someFactor = 10
+                        someFactor = 1
                         delayBox.update(None)
                     if self.name == includeSettingsInGifBox.name: includeSettingsInOutput = False
 
