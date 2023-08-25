@@ -109,6 +109,13 @@ def printSign():
 /\____) |       | )   ( |       | (___) |
 \_______)       |/     \|       (_______)
                                          """)
+
+def printLimitations(myType):
+    printL(myType,"Limitations exceeded. For reference see below")
+    printL(myType,"Current program limitations:")
+    printL(myType,"Size < 1000")
+    printL(myType, "if display values in bar, Size < 50")
+    printL(myType,"Loops must be < 9999, set to 0 for Inf")
 # Given a type, removes all entries of that type from log
 def deleteType(theType):
     global textLog
@@ -166,27 +173,12 @@ def CreateGIF(counter,SCREENSHOT_FILENAME):
     updateDisplay()
     #Idea is that pictures are generated with numbers 0 to some MAX
     printL(1,"Trying to generate GIF, this may freeze the program and take a while")
-    #Check for reasonable inputs
-    if display.loopBox.text != "Inf":
-        if int(display.loopBox.text) > 9999:
-            printL(1,"Loops must be < 9999, set to 0 for infinite")
-            printL(1,"Stopping GIF creation")
-            deleteTempFiles()
-            return -1
-    if int(display.fpsBox.text) > 200:
-        printL(1, "FPS must be < 200")
-        printL(1, "Stopping GIF creation")
-        deleteTempFiles()
-        return -1
     fileNames = []
     for i in range(0,counter):
         fileNames.append(f"{SCREENSHOT_FILENAME}{str(i)}.jpg")
     #This will start to load in individual pictures into gif engine
     numberOfLoops = 0
-    if display.loopBox.text != "Inf":
-        numberOfLoops = int(display.loopBox.text)
     deleteExistingSortingGif()
-    printL(1, f"GIF settings:{str(display.loopBox.text)} loops,{str(display.fpsBox.text)}fps")
     printL(1, f"Adding {str(display.delay)} ms delay for each image in GIF")
     printL(4, "Accurate gif settings is applied \n Therefore every frame from animation will be in GIF.")
     printL(4, "This increases time to generate, but also more accurately displays how sorting function works.")
@@ -205,7 +197,7 @@ def CreateGIF(counter,SCREENSHOT_FILENAME):
         updateDisplay()
         show_trace(Exception)
     printL(1, "Writing GIF to disk")
-    writeGifFile(listOfImages, numberOfLoops)
+    writeGifFile(listOfImages, display.loopBox.get_value())
     printProgress(100)
     updateDisplay()
     #Del latest list, this does NOT decrease current RAM usage,
@@ -250,10 +242,10 @@ def createPicturesFolder():
         mkdir("pictures")
     except:
         raise Exception("Could not create pictures folder")
-    
+
 def main():
     updateDisplay()
-    printL(4,"Function import and program load complete")
+    printL(4,"Function import and program load completed")
     SCREENSHOT_FILENAME = "pictures/screenshot" #+ a counter number + JPG
     
     numbers = []
@@ -289,9 +281,12 @@ def main():
 
         if display.playButton.isActive: # play button clicked
             try:
-                if int(display.sizeBox.text) > 1000:
+                if int(display.sizeBox.text) > 1000 or \
+                        (display.displayValuesInOutput and int(display.sizeBox.text) > 49) and \
+                        (display.loopBox.get_value() < 9999):
                     # This is limitation because of RAM. size = 100 needs 2GB of RAM, so 120 is for some reason significantly higher
-                    printL(1,("GIF cannot be created for size > 1000"))
+                    printL(3,("Halting output creation"))
+                    printLimitations(3)
                 else:
                     printL(1,"-------------------------------")
                     printL(1,("Creating animation"))
@@ -343,24 +338,24 @@ def main():
                     GIF_skip_image_counter +=1
                     
             except StopIteration:
-                display.do_sorting = False
                 #If program stops because end of sorting, gif needs to be created if selected
-                if True: #Check if GIF was requested
-                    #Create green bars
-                    a_set = set(range(display.numBars))
-                    display.drawInterface(numbers, -1, -1, -1, -1, greenRows=a_set)
-                    #Make sure they are saved for a second
-                    takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, screenshot)
-                    GIF_picture_counter += 1
-                    takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, screenshot)
-                    GIF_picture_counter += 1
-                    takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, screenshot)
-                    GIF_picture_counter += 1
-                    # Call function for GIF
-                    CreateGIF(GIF_picture_counter,SCREENSHOT_FILENAME)
-                    #Reset counter
-                    GIF_picture_counter = 0
-                    GIF_skip_image_counter = 0
+                #Create green bars
+                a_set = set(range(display.numBars))
+                display.drawInterface(numbers, -1, -1, -1, -1, greenRows=a_set)
+                #Make sure they are saved for a second
+                takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, screenshot)
+                GIF_picture_counter += 1
+                takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, screenshot)
+                GIF_picture_counter += 1
+                takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, screenshot)
+                GIF_picture_counter += 1
+                # Call function for GIF
+                CreateGIF(GIF_picture_counter,SCREENSHOT_FILENAME)
+                #Reset counter
+                GIF_picture_counter = 0
+                GIF_skip_image_counter = 0
+                # Turn off sorting
+                display.do_sorting = False
                 
         elif display.do_sorting and display.paused: # animation paused
             display.drawInterface(numbers, -1, -1, -1, -1)
