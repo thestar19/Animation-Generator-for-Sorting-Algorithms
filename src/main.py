@@ -245,7 +245,7 @@ def createPicturesFolder():
 
 def main():
     updateDisplay()
-    printL(4,"Function import and program load complete")
+    printL(4,"Function import and program load completed")
     SCREENSHOT_FILENAME = "pictures/screenshot" #+ a counter number + JPG
     
     numbers = []
