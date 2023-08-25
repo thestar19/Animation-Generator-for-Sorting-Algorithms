@@ -1,6 +1,7 @@
 import pygame
 from math import ceil
 from time import time
+from random import randint
 
 # Initialize pygame modules
 pygame.init()
@@ -14,6 +15,7 @@ pygame.display.set_caption('Sorting Algorithm GIF Generator')
 
 # Font
 baseFont = pygame.font.SysFont('Arial', 24)
+smallBaseFont = pygame.font.SysFont('Arial', 14)
 
 # Used Colors
 grey = (100, 100, 100)
@@ -30,7 +32,7 @@ class Box:
         self.isActive = False
         self.rect = pygame.Rect(rect)
 
-    def update(self):
+    def update(self,event=None):
         self.mousePos = pygame.mouse.get_pos()
         self.clicked = pygame.mouse.get_pressed() != (0, 0, 0)
         self.isActive = True if self.rect.collidepoint(self.mousePos) else False
@@ -65,26 +67,28 @@ class BoxWithText(Box):
         screen.blit(label, (self.rect.x + (self.rect.w - label.get_width()) / 2, self.rect.y - 32))
         pygame.draw.rect(screen, grey, self.rect, 3)
 
-    def update(self):
+    def update(self,event=None):
         global someFactor
         global includeSettingsInOutput
+        global displayValuesInOutput
         super().update()
         if self.isActive and self.clicked:
             if len(self.text2) > 0:
                 if self.text == self.text1:
                     self.text = self.text2
-                    if self.name == delayX10box.name:
+                    if self.name == delayX10Box.name:
                         someFactor = 10
                         delayBox.update(None)
                     if self.name == includeSettingsInGifBox.name: includeSettingsInOutput = True
+                    if self.name == showValueInBarsBox.name: displayValuesInOutput = True
 
                 else:
                     self.text = self.text1
-                    if self.name == delayX10box.name:
+                    if self.name == delayX10Box.name:
                         someFactor = 1
                         delayBox.update(None)
                     if self.name == includeSettingsInGifBox.name: includeSettingsInOutput = False
-
+                    if self.name == showValueInBarsBox.name: displayValuesInOutput = False
 
 
 class InputBox(Box):
@@ -126,6 +130,11 @@ class TextBox(InputBox):
                 elif event.unicode.isdigit():
                     self.text += event.unicode
 
+    def get_value(self):
+        if self.name == "Loops" and self.text == "Inf":
+            return 0
+        else:
+            return int(self.text)
 
 class SlideBox(InputBox):
     def __init__(self, name, color, rect):
@@ -148,8 +157,8 @@ class SlideBox(InputBox):
         self.start = self.rect.x + 6
         self.end = self.rect.x + self.rect.w - 6
         self.value += self.start - previousStart
-        delay = ((self.value) * someFactor)-self.start+1
-        self.name = "Delay:" + str(((self.value) * someFactor)-self.start+1) + "ms"
+        delay = ((self.value-self.start) * someFactor)+1
+        self.name = "Delay:" + str(((self.value-self.start) * someFactor)+1) + "ms"
         if self.isActive:
             if self.clicked:
                 if self.start <= self.mousePos[0] <= self.end: self.value = self.mousePos[0]
@@ -203,7 +212,7 @@ class ButtonBox(Box):
             self.rect.x = playButton.rect.x + playButton.rect.w + 20
         screen.blit(self.img, (self.rect.x, self.rect.y))
 
-    def update(self):
+    def update(self,event=None):
         global screen
         global show_advanced
         global windowSize
@@ -237,7 +246,7 @@ class CheckBox(Box):
             self.img = pygame.image.load(self.image1)
         screen.blit(self.img, (self.rect.x, self.rect.y))
 
-    def update(self):
+    def update(self,event=None):
         super().update()
         if self.isActive: self.isActive = True if self.clicked else False
         if self.isActive:
@@ -292,7 +301,7 @@ class DropdownBox(InputBox):
                 option_text = self.font.render(self.options[i][:12], 1, options_color)
                 screen.blit(option_text, option_text.get_rect(center=rect.center))
 
-    def update(self):
+    def update(self,event=None):
         self.rect.x = delayBox.rect.w + delayBox.rect.x + 20
         mouse_position = pygame.mouse.get_pos()
         column = 0
@@ -333,8 +342,13 @@ paused = False
 timer_space_bar = 0
 someFactor = 1
 includeSettingsInOutput = False
+displayValuesInOutput = False
 
 # Input Boxes
+# To add new box, simply add one line below and then the ref to ListOfAllBoxes append call below
+# If type is ButtonBox like for playButton or stopButton, look at function updateWidgets & drawBottomMenu
+# because they are special
+ListOfAllBoxes = []
 sizeBox = TextBox('Size', grey, (30, 440, 50, 50), '10')
 loopBox = TextBox('Loops', grey, (580, 440, 50, 50), 'Inf')
 delayBox = SlideBox("Delay:" + "100" + "ms", grey, (105, 440, 300, 50))
@@ -343,31 +357,38 @@ playButton = ButtonBox('res/playButton.png', (800, 440, 50, 50))
 stopButton = ButtonBox('res/stopButton.png', (800, 440, 50, 50))
 advancedText = justText("--------------------------------Advanced options--------------------------------", grey,
                         (400, 560, 100, 50))
-fpsBox = TextBox('FPS', grey, (30, 620, 50, 50), "30")
-delayX10box = BoxWithText("Increase delay", (160, 620, 60, 60), "x10", "x1")
-includeSettingsInGifBox = BoxWithText("Include settings in GIF", (380, 620, 100, 60), "Include", "Exclude")
+delayX10Box = BoxWithText("Increase delay", (60, 620, 60, 50), "x10", "x1")
+includeSettingsInGifBox = BoxWithText("Include settings in GIF", (250, 620, 95, 50), "Include", "Exclude")
+showValueInBarsBox = BoxWithText("Display values in bar", (510, 620, 95, 50), "Include", "Exclude")
 
-
+#Add ref to all elements in list.
+ListOfAllBoxes.extend([sizeBox,loopBox,delayBox,algorithmBox,playButton,stopButton,advancedText, \
+                      delayX10Box,includeSettingsInGifBox,showValueInBarsBox])
 def updateWidgets(event):
-    sizeBox.update(event)
-    loopBox.update(event)
-    delayBox.update(event)
-    algorithmBox.update()
-    fpsBox.update(event)
-    delayX10box.update()
-    includeSettingsInGifBox.update()
+    global ListOfAllBoxes
+    # Instead of looping
+    for aBox in ListOfAllBoxes:
+        # We have to skip stop & start button bc they are special
+        if type(aBox) != ButtonBox:
+            aBox.update(event)
+    #Stop & start button are specials
     if do_sorting:
         stopButton.update()
     else:
         playButton.update()
 
+def drawText(myText,myColor,rect):
+    rect = pygame.Rect(rect)
+    label = smallBaseFont.render(myText, True, myColor)
+    screen.blit(label, (rect.x - (label.get_width() / 2), rect.y - 32))
+
 
 def drawBars(array, redBar1, redBar2, blueBar1, blueBar2, greenRows={}, **kwargs):
+    global displayValuesInOutput
     '''Draw the bars and control their colors'''
     if numBars != 0:
         bar_width = 900 / numBars
         ceil_width = ceil(bar_width)
-
     for num in range(numBars):
         if num in (redBar1, redBar2):
             color = red
@@ -378,18 +399,23 @@ def drawBars(array, redBar1, redBar2, blueBar1, blueBar2, greenRows={}, **kwargs
         else:
             color = grey
         pygame.draw.rect(screen, color, (num * bar_width, 400 - array[num], ceil_width, array[num]))
+        #Maybe draw text
+        if displayValuesInOutput and numBars < 20 and do_sorting:
+            top = (400 - array[num])
+            if 360 < (400 - array[num]):
+                top = (400 - array[num]) - 30
+            else:
+                top = (400 - array[num]) + 40
+            drawText(str(array[num]),black,((num * bar_width) + bar_width/2,top,ceil_width/2,30))
 
 
 def drawBottomMenu():
     '''Draw the menu below the bars'''
-    sizeBox.draw()
-    loopBox.draw()
-    delayBox.draw()
-    algorithmBox.draw()
-    advancedText.draw()
-    #fpsBox.draw()
-    delayX10box.draw()
-    includeSettingsInGifBox.draw()
+    global ListOfAllBoxes
+    for aBox in ListOfAllBoxes:
+        # We have to skip stop & start button bc they are special
+        if type(aBox) != ButtonBox:
+            aBox.draw()
     if do_sorting:
         stopButton.draw()
     else:
