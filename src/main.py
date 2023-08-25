@@ -114,7 +114,7 @@ def printLimitations(myType):
     printL(myType,"Limitations exceeded. For reference see below")
     printL(myType,"Current program limitations:")
     printL(myType,"Size < 1000")
-    printL(myType, "if display values in bar, Size < 50")
+    printL(myType, "if display values in bar, Size < 20")
     printL(myType,"Loops must be < 9999, set to 0 for Inf")
 # Given a type, removes all entries of that type from log
 def deleteType(theType):
@@ -296,6 +296,8 @@ def main():
                     display.playButton.isActive = False
                     current_alg = display.algorithmBox.get_active_option()
                     display.numBars = int(display.sizeBox.text)
+                    if display.numBars > 20 and display.displayValuesInOutput:
+                        printL(3,"Will not render values in bars because number of bars > 20"
                     numbers = [randint(10, 400) for i in range(display.numBars)]  # random list to be sorted
                     alg_iterator = algorithmsDict[current_alg](numbers, 0, display.numBars - 1)  # initialize iterator
                 display.playButton.isActive = False
