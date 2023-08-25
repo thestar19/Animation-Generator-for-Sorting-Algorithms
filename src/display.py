@@ -8,10 +8,13 @@ pygame.init()
 # Display settings
 windowSize = (900, 800)
 screen = pygame.display.set_mode(windowSize)
-pygame.display.set_caption('Sorting Algorithm Animation Generator')
+
+#pygame.display.set_caption('Sorting Algorithm Animation Generator')
+pygame.display.set_caption('Sorting Algorithm GIF Generator')
 
 # Font
 baseFont = pygame.font.SysFont('Arial', 24)
+
 # Used Colors
 grey = (100, 100, 100)
 green = (125, 240, 125)
@@ -34,16 +37,15 @@ class Box:
 
 
 class justText(Box):
-    def __init__(self, text, color, rect):
+    def __init__(self, text, color,rect):
         super().__init__(rect)
         self.text = text
         self.color = color
-        # self.rect = pygame.Rect(rect)
+
 
     def draw(self):
         label = baseFont.render(self.text, True, self.color)
         screen.blit(label, (self.rect.x + (self.rect.w - label.get_width()) / 2, self.rect.y - 32))
-        # pygame.draw.rect(screen, self.color, self.rect, 3)
 
 
 class BoxWithText(Box):
@@ -79,7 +81,7 @@ class BoxWithText(Box):
                 else:
                     self.text = self.text1
                     if self.name == delayX10box.name:
-                        someFactor = 10
+                        someFactor = 1
                         delayBox.update(None)
                     if self.name == includeSettingsInGifBox.name: includeSettingsInOutput = False
 
@@ -146,8 +148,8 @@ class SlideBox(InputBox):
         self.start = self.rect.x + 6
         self.end = self.rect.x + self.rect.w - 6
         self.value += self.start - previousStart
-        delay = ((self.value) * someFactor)-self.start
-        self.name = "Delay:" + str(((self.value) * someFactor)-self.start) + "ms"
+        delay = ((self.value) * someFactor)-self.start+1
+        self.name = "Delay:" + str(((self.value) * someFactor)-self.start+1) + "ms"
         if self.isActive:
             if self.clicked:
                 if self.start <= self.mousePos[0] <= self.end: self.value = self.mousePos[0]
@@ -322,14 +324,13 @@ class DropdownBox(InputBox):
 # END OF MODULE #
 
 
-# Global Variables
+# Global Settings
 numBars = 0
 delay = 100
 do_sorting = False
 show_advanced = False
 paused = False
 timer_space_bar = 0
-# Global settings
 someFactor = 1
 includeSettingsInOutput = False
 
@@ -386,7 +387,7 @@ def drawBottomMenu():
     delayBox.draw()
     algorithmBox.draw()
     advancedText.draw()
-    fpsBox.draw()
+    #fpsBox.draw()
     delayX10box.draw()
     includeSettingsInGifBox.draw()
     if do_sorting:
