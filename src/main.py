@@ -17,8 +17,6 @@ try:
     from os import rmdir, walk, getcwd, system, mkdir, remove
     from gc import collect
     import imageio.v3
-    #from PIL import Image
-    from concurrent.futures import ThreadPoolExecutor
     import pygame
 except ImportError:
     show_trace()
@@ -45,14 +43,6 @@ DEBUG = False
 # 2 = reserved for progress indication
 # 3 = Warning message
 # 4 = Reserved for debug use
-
-
-#This prevents the program from crashing for freezing
-def run_io_tasks_in_parallel(tasks):
-    with ThreadPoolExecutor() as executor:
-        running_tasks = [executor.submit(task) for task in tasks]
-        for running_task in running_tasks:
-            running_task.result()
 
 #Generating gifs requires placing files in subfolder and then loading them.
 #This deletes everything except gif
@@ -197,17 +187,10 @@ def CreateGIF(counter,SCREENSHOT_FILENAME):
         numberOfLoops = int(display.loopBox.text)
     deleteExistingSortingGif()
     printL(1, f"GIF settings:{str(display.loopBox.text)} loops,{str(display.fpsBox.text)}fps")
-    #newGif = imageio.get_writer('sorting.gif', format='GIF-PIL', mode='I', fps=int(display.fpsBox.text),loop=numberOfLoops,duration=(display.delay/1000))
     printL(1, f"Adding {str(display.delay)} ms delay for each image in GIF")
     printL(4, "Accurate gif settings is applied \n Therefore every frame from animation will be in GIF.")
     printL(4, "This increases time to generate, but also more accurately displays how sorting function works.")
     printL(4, f"Total number of recorded images: {str(len(fileNames))}")
-    #printL(1, f"Approximate runtime is: {str(int(len(fileNames) * display.delay * 1000/(1000/display.delay)))}s")
-    #newGif = imageio.v2.get_writer('sorting.gif',format='GIF-PIL',mode='I',fps=int(display.fpsBox.text),loop=numberOfLoops,duration = display.delay)
-    #newGif = imageio.v3.imopen('sorting.gif',"w",plugin="pillow")
-    #duration=int(display.delay),loop=numberOfLoops) :
-    #totalRunTime = ((len(fileNames) * delay_ratio)/int(display.fpsBox.text))*0.9
-    #printL(1,f"Approximate GIF runtime is {str(totalRunTime)}s")
     updateDisplay()
     try:
         listOfImages = []
@@ -216,18 +199,18 @@ def CreateGIF(counter,SCREENSHOT_FILENAME):
                 updateDisplay()
             listOfImages.append(imageio.v3.imread(filename))
             printProgress(int(((counter) / len(fileNames)) * 100*0.7))
-        #newGif.write(listOfImages, duration=int(display.delay),loop=numberOfLoops,optimize=True)
     except Exception:
         printL(4,"Tried to create GIF, something went wrong")
         printL(4,"Terminating program")
         updateDisplay()
         show_trace(Exception)
-    run_io_tasks_in_parallel([lambda: writeGifFile(listOfImages,numberOfLoops),lambda:printL(1,"Generating GIF")])
+    printL(1, "Writing GIF to disk")
+    writeGifFile(listOfImages, numberOfLoops)
     printProgress(100)
+    updateDisplay()
     #Del latest list, this does NOT decrease current RAM usage,
     #but makes next round use the same memory area instead
     printL(1,"Cleaning up remaining files")
-    #newGif.close()
     del listOfImages
     del fileNames
     collect()
@@ -270,7 +253,7 @@ def createPicturesFolder():
     
 def main():
     updateDisplay()
-    printL(1,"Loading complete")
+    printL(4,"Function import and program load complete")
     SCREENSHOT_FILENAME = "pictures/screenshot" #+ a counter number + JPG
     
     numbers = []
