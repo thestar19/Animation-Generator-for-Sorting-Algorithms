@@ -297,7 +297,7 @@ def main():
                     current_alg = display.algorithmBox.get_active_option()
                     display.numBars = int(display.sizeBox.text)
                     if display.numBars > 20 and display.displayValuesInOutput:
-                        printL(3,"Will not render values in bars because number of bars > 20"
+                        printL(3,"Will not render values in bars because number of bars > 20")
                     numbers = [randint(10, 400) for i in range(display.numBars)]  # random list to be sorted
                     alg_iterator = algorithmsDict[current_alg](numbers, 0, display.numBars - 1)  # initialize iterator
                 display.playButton.isActive = False
