@@ -261,12 +261,14 @@ class CheckBox(Box):
 class DropdownBox(InputBox):
     DEFAUTL_OPTION = 0
 
-    def __init__(self, name, rect, font, color=grey):
+    def __init__(self, name, rect, font, color,buddyToLeft):
         super().__init__(name, color, rect)
         self.isActive = False
         self.font = font
         self.options_color = white
         self.active_option = -1
+        self.buddyToLeft = buddyToLeft
+        self.options = None
 
     def add_options(self, options):
         self.options = options
@@ -302,7 +304,8 @@ class DropdownBox(InputBox):
                 screen.blit(option_text, option_text.get_rect(center=rect.center))
 
     def update(self,event=None):
-        self.rect.x = delayBox.rect.w + delayBox.rect.x + 20
+        if self.buddyToLeft:
+            self.rect.x = self.buddyToLeft.rect.w + self.buddyToLeft.rect.x + 20
         mouse_position = pygame.mouse.get_pos()
         column = 0
         index = 0
@@ -352,7 +355,7 @@ ListOfAllBoxes = []
 sizeBox = TextBox('Size', grey, (30, 440, 50, 50), '10')
 loopBox = TextBox('Loops', grey, (580, 440, 50, 50), 'Inf')
 delayBox = SlideBox("Delay:" + "100" + "ms", grey, (105, 440, 300, 50))
-algorithmBox = DropdownBox('Algorithm', (410, 440, 140, 50), baseFont)
+algorithmBox = DropdownBox('Algorithm', (410, 440, 140, 50), baseFont,grey,delayBox)
 playButton = ButtonBox('res/playButton.png', (800, 440, 50, 50))
 stopButton = ButtonBox('res/stopButton.png', (800, 440, 50, 50))
 advancedText = justText("--------------------------------Advanced options--------------------------------", grey,
@@ -360,10 +363,12 @@ advancedText = justText("--------------------------------Advanced options-------
 delayX10Box = BoxWithText("Increase delay", (60, 620, 60, 50), "x10", "x1")
 includeSettingsInGifBox = BoxWithText("Include settings in GIF", (250, 620, 95, 50), "Include", "Exclude")
 showValueInBarsBox = BoxWithText("Display values in bar", (510, 620, 95, 50), "Include", "Exclude")
+outputFormatBox = DropdownBox('Output Format', (60, 720, 220, 50), baseFont,grey,None)
+
 
 #Add ref to all elements in list.
 ListOfAllBoxes.extend([sizeBox,loopBox,delayBox,algorithmBox,playButton,stopButton,advancedText, \
-                      delayX10Box,includeSettingsInGifBox,showValueInBarsBox])
+                      delayX10Box,includeSettingsInGifBox,showValueInBarsBox,outputFormatBox])
 def updateWidgets(event):
     global ListOfAllBoxes
     # Instead of looping
