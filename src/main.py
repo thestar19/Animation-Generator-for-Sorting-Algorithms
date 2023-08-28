@@ -14,9 +14,10 @@ try:
     from time import time
     from algs import algorithmsDict
     import display as display
-    from os import rmdir, walk, getcwd, system, mkdir, remove
+    from os import rmdir, walk, getcwd, system, mkdir, remove,path
     from gc import collect
-    import imageio.v3
+    import imageio.v3 as iio
+    #import av #Temporary, this should be changed to only import needed functions
     import pygame
 except ImportError:
     show_trace()
@@ -34,9 +35,10 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-textLog = []
-textLogUpdate = True
+TEXTLOG = []
+TEXTLOG_UPDATE = True
 DEBUG = False
+CURRENT_OUTPUT_FORMATS = ["GIF","MP4"]
 
 #printL types:
 # 1 = normal log message
@@ -62,28 +64,29 @@ def deleteTempFiles():
 
 # For some uses, having an existing sorting.gif file is a problem
 # Therefore, this function deletes that file using os lib
-def deleteExistingSortingGif():
-    try:
-        remove("sorting.gif")
-        printL(1, "Removed previous GIF")
-    except:
-        printL(3,"Could not remove previous sorting.gif")
+def deleteExistingFile(name):
+    if path.exists(name):
+        try:
+            remove(name)
+            printL(1, f"Removed {name}")
+        except:
+            printL(3,f"Could not remove {name}")
 
 #Call function with type according to above (eg 0 for normal log)
 # and a string with whatever should be added to log
 def printL(type,addition):
-    global textLog
-    global textLogUpdate
-    textLogUpdate = True
-    textLog.append((type,addition))
+    global TEXTLOG
+    global TEXTLOG_UPDATE
+    TEXTLOG_UPDATE = True
+    TEXTLOG.append((type,addition))
 
 # Function that correctly inserts new progress item into log
 def printProgress(progress):
-    global textLog
-    global textLogUpdate
-    textLogUpdate = True
+    global TEXTLOG
+    global TEXTLOG_UPDATE
+    TEXTLOG_UPDATE = True
     #Insert at pos 0
-    textLog.insert(0,(2, progress))
+    TEXTLOG.insert(0,(2, progress))
 
 # Prints progress bar, only to be called if
 # in log values of type 2 exists and terminal is clear
@@ -117,45 +120,57 @@ def printLimitations(myType):
     printL(myType, "if display values in bar, Size < 20")
     printL(myType,"Loops must be < 9999, set to 0 for Inf")
 # Given a type, removes all entries of that type from log
+
+def checkVersionOfPYAV():
+    with iio.imopen("temp.mp4","w",plugin="pyav") as newVideo:
+        exists = False
+        for attr in dir(newVideo):
+            if "init_video_stream" == attr:
+                exists = True
+        if exists:
+            printL(4,"Correct version of pyav detected")
+            #This is kinda wierd, but is really just so control-flow works correctly.
+            return
+        else:
+            print("Incorrect version of pyav detected")
+            print("Exiting program")
+    deleteExistingFile("temp.mp4")
+    sys.exit(0)
+
 def deleteType(theType):
-    global textLog
+    global TEXTLOG
     counter = 0
     while True:
-        if counter >= len(textLog)-2:
+        if counter >= len(TEXTLOG)-2:
             return True
-        type,value = textLog[counter]
+        type,value = TEXTLOG[counter]
         if type == theType:
-            textLog.pop(counter)
+            TEXTLOG.pop(counter)
             counter = counter-3
         counter +=1
 
 # Function that clears terminal and write new info.
 # To activate, set textLogUpdate = True, usually it will run shortly
 def updateDisplay():
-    global textLog
-    global textLogUpdate
+    global TEXTLOG
+    global TEXTLOG_UPDATE
     # Without this, much resources would be wasted on rewriting log terminal display
-    if not textLogUpdate:
+    if not TEXTLOG_UPDATE:
         return -1
-    textLogUpdate = False
+    TEXTLOG_UPDATE = False
     #runTime = time.strftime("%H:%M:%S", time.localtime(time.time() - startUpTime - 60 * 60))
     system("clear")
     printSign()
     #print(str(runTime))
-    if len(textLog) > 20:
-        for i in range(0,10):
-            type,value = textLog[0]
-            if type != 2:
-                textLog.pop(0)
     maxProgress = -1
-    for type,value in textLog:
+    for type,value in TEXTLOG:
         if type == 2:
             if value > maxProgress:
                 maxProgress = value
     if -1 < maxProgress < 100:
         printProgressBar(maxProgress)
         print("--------------------------------------------")
-    for type,value in textLog:
+    for type,value in TEXTLOG:
         if type == 1:
             print(value)
         if type == 3:
@@ -164,12 +179,12 @@ def updateDisplay():
             print(f"{bcolors.OKBLUE} Debug: {value} {bcolors.ENDC}")
 
 def writeGifFile(listOfImages,numberOfLoops):
-    newGif = imageio.v3.imopen('sorting.gif', "w", plugin="pillow")
+    newGif = iio.imopen('sorting.gif', "w", plugin="pillow")
     newGif.write(listOfImages, duration=int(display.delay), loop=numberOfLoops, optimize=True)
     newGif.close()
 
 # Create GIF using existing files
-def CreateGIF(counter,SCREENSHOT_FILENAME):
+def createGIF(counter,SCREENSHOT_FILENAME):
     updateDisplay()
     #Idea is that pictures are generated with numbers 0 to some MAX
     printL(1,"Trying to generate GIF, this may freeze the program and take a while")
@@ -178,24 +193,18 @@ def CreateGIF(counter,SCREENSHOT_FILENAME):
         fileNames.append(f"{SCREENSHOT_FILENAME}{str(i)}.jpg")
     #This will start to load in individual pictures into gif engine
     numberOfLoops = 0
-    deleteExistingSortingGif()
+    deleteExistingFile("sorting.gif")
     printL(1, f"Adding {str(display.delay)} ms delay for each image in GIF")
     printL(4, "Accurate gif settings is applied \n Therefore every frame from animation will be in GIF.")
     printL(4, "This increases time to generate, but also more accurately displays how sorting function works.")
     printL(4, f"Total number of recorded images: {str(len(fileNames))}")
     updateDisplay()
-    try:
-        listOfImages = []
-        for (counter, filename) in enumerate(fileNames):
-            if counter % 100 == 1:
-                updateDisplay()
-            listOfImages.append(imageio.v3.imread(filename))
-            printProgress(int(((counter) / len(fileNames)) * 100*0.7))
-    except Exception:
-        printL(4,"Tried to create GIF, something went wrong")
-        printL(4,"Terminating program")
-        updateDisplay()
-        show_trace(Exception)
+    listOfImages = []
+    for (counter, filename) in enumerate(fileNames):
+        if counter % 100 == 1:
+            updateDisplay()
+        listOfImages.append(iio.imread(filename))
+        printProgress(int(((counter) / len(fileNames)) * 100*0.7))
     printL(1, "Writing GIF to disk")
     writeGifFile(listOfImages, display.loopBox.get_value())
     printProgress(100)
@@ -211,7 +220,50 @@ def CreateGIF(counter,SCREENSHOT_FILENAME):
     deleteTempFiles()
     deleteType(2)
     updateDisplay()
-    
+
+# Create MP4 using existing files
+def createMP4(counter,SCREENSHOT_FILENAME):
+    updateDisplay()
+    #Idea is that pictures are generated with numbers 0 to some MAX
+    printL(1,"Trying to generate MP4, this may freeze the program and take a while")
+    fileNames = []
+    for i in range(0,counter):
+        fileNames.append(f"{SCREENSHOT_FILENAME}{str(i)}.jpg")
+    #This will start to load in individual pictures into gif engine
+    numberOfLoops = 0
+    deleteExistingFile("sorting.mp4")
+    printL(1, f"Adding {str(display.delay)} ms delay for each image in MP4")
+    printL(4, "Accurate MP4 settings is applied \n Therefore every frame from animation will be in MP4.")
+    printL(4, "This increases time to generate, but also more accurately displays how sorting function works.")
+    printL(4, f"Total number of recorded images: {str(len(fileNames))}")
+    printL(4,f"Ignoring looping options because MP4 format does not support")
+    updateDisplay()
+    with iio.imopen("sorting.mp4","w",plugin="pyav") as newVideo:
+        newVideo.init_video_stream("mpeg4",fps=30)
+        frameCounter = int((display.delay * 30)/1000) #Formula to get number of repeat images for delay
+        if frameCounter < 1:
+            frameCounter = 1
+        for (counter, filename) in enumerate(fileNames):
+            if counter % 100 == 1 or counter < 200:
+                updateDisplay()
+            aFrame = iio.imread(filename) #So we don't read it more than once
+            for _ in range(frameCounter):
+                newVideo.write_frame(aFrame)
+            printProgress(int(((counter) / len(fileNames)) * 100))
+    printL(1, "Writing MP4 to disk")
+    printProgress(100)
+    updateDisplay()
+    #Del latest list, this does NOT decrease current RAM usage,
+    #but makes next round use the same memory area instead
+    printL(1,"Cleaning up remaining files")
+    del fileNames
+    collect()
+    printL(1,"MP4 generation complete as sorting.mp4")
+    #Delete all files in folder
+    deleteTempFiles()
+    deleteType(2)
+    updateDisplay()
+
 #Given a list of filenames, it returns what number the highest file has.
 def getMaxNumber(files):
     currentMax  = -1
@@ -251,6 +303,7 @@ def main():
     numbers = []
     running = True
     display.algorithmBox.add_options(list(algorithmsDict.keys()))
+    display.outputFormatBox.add_options(CURRENT_OUTPUT_FORMATS)
 
     alg_iterator = None
     
@@ -352,7 +405,10 @@ def main():
                 takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, screenshot)
                 GIF_picture_counter += 1
                 # Call function for GIF
-                CreateGIF(GIF_picture_counter,SCREENSHOT_FILENAME)
+                if display.outputFormatBox.get_active_option() == "GIF":
+                    createGIF(GIF_picture_counter,SCREENSHOT_FILENAME)
+                else:
+                    createMP4(GIF_picture_counter,SCREENSHOT_FILENAME)
                 #Reset counter
                 GIF_picture_counter = 0
                 GIF_skip_image_counter = 0
@@ -366,6 +422,9 @@ def main():
             display.drawInterface(numbers, -1, -1, -1, -1, greenRows=a_set)
 
 if __name__ == '__main__':
+    #Check if correct software is installed
+    checkVersionOfPYAV()
+    #Check for any args in program init
     if len(sys.argv) > 1:
         if sys.argv[1] == "True" or sys.argv[1] == "true":
             DEBUG = True
