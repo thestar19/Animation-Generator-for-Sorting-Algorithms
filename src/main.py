@@ -233,9 +233,10 @@ def createMP4(counter,SCREENSHOT_FILENAME):
     numberOfLoops = 0
     deleteExistingFile("sorting.mp4")
     printL(1, f"Adding {str(display.delay)} ms delay for each image in MP4")
-    printL(4, "Accurate gif settings is applied \n Therefore every frame from animation will be in MP4.")
+    printL(4, "Accurate MP4 settings is applied \n Therefore every frame from animation will be in MP4.")
     printL(4, "This increases time to generate, but also more accurately displays how sorting function works.")
     printL(4, f"Total number of recorded images: {str(len(fileNames))}")
+    printL(4,f"Ignoring looping options because MP4 format does not support")
     updateDisplay()
     with iio.imopen("sorting.mp4","w",plugin="pyav") as newVideo:
         newVideo.init_video_stream("mpeg4",fps=30)
