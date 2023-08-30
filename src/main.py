@@ -452,8 +452,8 @@ if __name__ == '__main__':
         output_format = "GIF"
         output_delay = 1
         output_size = 100
+        add_numbers_to_bars = False
         for inst,value in instructions:
-            print(inst)
             #Check for output format
             if inst == "-f" and value in CURRENT_OUTPUT_FORMATS:
                 output_format = value
@@ -474,7 +474,7 @@ if __name__ == '__main__':
                 break
             #Check for including numbers in bars or entire GUI
             elif inst == "-include" and value == "numbers":
-                output_size = int(value)
+                add_numbers_to_bars = True
             elif inst == "-include":
                 print(f"Incorrect args, -include value {value} is not text \"numbers\"")
                 break
