@@ -13,8 +13,7 @@ try:
     from random import randint
     from time import time
     from algs import algorithmsDict
-    import display as display
-    from os import rmdir, walk, getcwd, system, mkdir, remove,path
+    from os import rmdir, walk, getcwd, system, mkdir, remove,path,environ,putenv
     from gc import collect
     import imageio.v3 as iio
     #import av #Temporary, this should be changed to only import needed functions
@@ -39,6 +38,7 @@ TEXTLOG = []
 TEXTLOG_UPDATE = True
 DEBUG = False
 CURRENT_OUTPUT_FORMATS = ["GIF","MP4"]
+SCREENSHOT_FILENAME = "pictures/screenshot"  # + a counter number + JPG
 
 #printL types:
 # 1 = normal log message
@@ -178,23 +178,24 @@ def updateDisplay():
         if type == 4 and DEBUG:
             print(f"{bcolors.OKBLUE} Debug: {value} {bcolors.ENDC}")
 
-def writeGifFile(listOfImages,numberOfLoops):
+def writeGifFile(listOfImages,numberOfLoops,delay):
     newGif = iio.imopen('sorting.gif', "w", plugin="pillow")
-    newGif.write(listOfImages, duration=int(display.delay), loop=numberOfLoops, optimize=True)
+    newGif.write(listOfImages, duration=int(delay), loop=numberOfLoops, optimize=True)
     newGif.close()
 
 # Create GIF using existing files
-def createGIF(counter,SCREENSHOT_FILENAME):
+def createGIF(counter,SCREENSHOT_FILENAME,delay,loops):
     updateDisplay()
     #Idea is that pictures are generated with numbers 0 to some MAX
     printL(1,"Trying to generate GIF, this may freeze the program and take a while")
     fileNames = []
+    if loops == "Inf":
+        loops = 0
     for i in range(0,counter):
         fileNames.append(f"{SCREENSHOT_FILENAME}{str(i)}.jpg")
     #This will start to load in individual pictures into gif engine
-    numberOfLoops = 0
     deleteExistingFile("sorting.gif")
-    printL(1, f"Adding {str(display.delay)} ms delay for each image in GIF")
+    printL(1, f"Adding {str(delay)} ms delay for each image in GIF")
     printL(4, "Accurate gif settings is applied \n Therefore every frame from animation will be in GIF.")
     printL(4, "This increases time to generate, but also more accurately displays how sorting function works.")
     printL(4, f"Total number of recorded images: {str(len(fileNames))}")
@@ -206,7 +207,7 @@ def createGIF(counter,SCREENSHOT_FILENAME):
         listOfImages.append(iio.imread(filename))
         printProgress(int(((counter) / len(fileNames)) * 100*0.7))
     printL(1, "Writing GIF to disk")
-    writeGifFile(listOfImages, display.loopBox.get_value())
+    writeGifFile(listOfImages,loops,delay)
     printProgress(100)
     updateDisplay()
     #Del latest list, this does NOT decrease current RAM usage,
@@ -217,12 +218,12 @@ def createGIF(counter,SCREENSHOT_FILENAME):
     collect()
     printL(1,"GIF generation complete as sorting.gif")
     #Delete all files in folder
-    deleteTempFiles()
+    #deleteTempFiles()
     deleteType(2)
     updateDisplay()
 
 # Create MP4 using existing files
-def createMP4(counter,SCREENSHOT_FILENAME):
+def createMP4(counter,SCREENSHOT_FILENAME,delay):
     updateDisplay()
     #Idea is that pictures are generated with numbers 0 to some MAX
     printL(1,"Trying to generate MP4, this may freeze the program and take a while")
@@ -230,9 +231,8 @@ def createMP4(counter,SCREENSHOT_FILENAME):
     for i in range(0,counter):
         fileNames.append(f"{SCREENSHOT_FILENAME}{str(i)}.jpg")
     #This will start to load in individual pictures into gif engine
-    numberOfLoops = 0
     deleteExistingFile("sorting.mp4")
-    printL(1, f"Adding {str(display.delay)} ms delay for each image in MP4")
+    printL(1, f"Adding {str(delay)} ms delay for each image in MP4")
     printL(4, "Accurate MP4 settings is applied \n Therefore every frame from animation will be in MP4.")
     printL(4, "This increases time to generate, but also more accurately displays how sorting function works.")
     printL(4, f"Total number of recorded images: {str(len(fileNames))}")
@@ -240,7 +240,7 @@ def createMP4(counter,SCREENSHOT_FILENAME):
     updateDisplay()
     with iio.imopen("sorting.mp4","w",plugin="pyav") as newVideo:
         newVideo.init_video_stream("mpeg4",fps=30)
-        frameCounter = int((display.delay * 30)/1000) #Formula to get number of repeat images for delay
+        frameCounter = int((delay * 30)/1000) #Formula to get number of repeat images for delay
         if frameCounter < 1:
             frameCounter = 1
         for (counter, filename) in enumerate(fileNames):
@@ -295,11 +295,66 @@ def createPicturesFolder():
     except:
         raise Exception("Could not create pictures folder")
 
+def listAsStringGood(myList):
+    valid_formats = ""
+    for option in myList:
+        valid_formats = f"{valid_formats},{option}"
+    return valid_formats
+
+
+def createPicturesForOutput(TERMINAL_MODE,GIF_picture_counter,GIF_skip_image_counter,numbers,alg_iterator,GIF_WINDOW_SIZE):
+    global SCREENSHOT_FILENAME
+    try:
+        while True:
+            printL(4,f"Current pic count:{GIF_picture_counter}")
+            numbers, redBar1, redBar2, blueBar1, blueBar2 = next(alg_iterator)
+            display.drawInterface(numbers, redBar1, redBar2, blueBar1, blueBar2)
+            screenshot = pygame.Surface(GIF_WINDOW_SIZE)
+            screenshot.blit(display.screen, (0, 0))
+            # Pictures needs to be generated and saved temporarily
+            if len(numbers) <= 200:
+                takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, screenshot)
+                GIF_picture_counter += 1
+            # If size > 200, then we need to take drastically less pictures
+            else:
+                if int(GIF_skip_image_counter) % int(5) == 1:
+                    takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, screenshot)
+                    GIF_picture_counter += 1
+                    GIF_skip_image_counter = 0
+                GIF_skip_image_counter += 1
+
+    except StopIteration:
+        # If program stops because end of sorting, gif needs to be created if selected
+        # Create green bars
+        a_set = set(range(display.numBars))
+        display.drawInterface(numbers, -1, -1, -1, -1, greenRows=a_set)
+        # Make sure they are saved for a second
+        takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, screenshot)
+        GIF_picture_counter += 1
+        takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, screenshot)
+        GIF_picture_counter += 1
+        takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, screenshot)
+        GIF_picture_counter += 1
+        # Call function for GIF
+        if not TERMINAL_MODE:
+            if display.outputFormatBox.get_active_option() == "GIF":
+                createGIF(GIF_picture_counter, SCREENSHOT_FILENAME, int(display.delay), int(display.loopBox.get_value()))
+            else:
+                createMP4(GIF_picture_counter, SCREENSHOT_FILENAME, int(display.delay))
+        # Turn off sorting
+        display.do_sorting = False
+        if TERMINAL_MODE:
+            return (GIF_picture_counter,GIF_skip_image_counter)
+
+
 def main():
     updateDisplay()
     printL(4,"Function import and program load completed")
-    SCREENSHOT_FILENAME = "pictures/screenshot" #+ a counter number + JPG
-    
+
+    #Create display
+    display.createDisplay(pygame.SHOWN)
+
+    #Init numbers and other important vars
     numbers = []
     running = True
     display.algorithmBox.add_options(list(algorithmsDict.keys()))
@@ -335,8 +390,10 @@ def main():
         if display.playButton.isActive: # play button clicked
             try:
                 if int(display.sizeBox.text) > 1000 or \
-                        (display.displayValuesInOutput and int(display.sizeBox.text) > 49) and \
-                        (display.loopBox.get_value() < 9999):
+                        (display.displayValuesInOutput and int(display.sizeBox.text) > 49) or \
+                        (display.loopBox.get_value() > 9999) or \
+                        (display.loopBox.get_value() == "") or \
+                        (display.sizeBox.text == ""):
                     # This is limitation because of RAM. size = 100 needs 2GB of RAM, so 120 is for some reason significantly higher
                     printL(3,("Halting output creation"))
                     printLimitations(3)
@@ -373,64 +430,47 @@ def main():
             GIF_skip_image_counter = 0
                 
         #GIF may need own thing
-        screenshot = pygame.Surface(GIF_WINDOW_SIZE)
-        screenshot.blit(display.screen, (0,0))
+        #screenshot = pygame.Surface(GIF_WINDOW_SIZE)
+        #screenshot.blit(display.screen, (0,0))
         
         if display.do_sorting and not display.paused: # sorting animation
-            try:
-                numbers, redBar1, redBar2, blueBar1, blueBar2 = next(alg_iterator)
-                display.drawInterface(numbers, redBar1, redBar2, blueBar1, blueBar2)
-                #Pictures needs to be generated and saved temporarily
-                if int(display.sizeBox.text) <= 200:
-                    takePicture(SCREENSHOT_FILENAME,GIF_picture_counter,screenshot)
-                    GIF_picture_counter +=1
-                #If size > 200, then we need to take drastically less pictures
-                else:
-                    if int(GIF_skip_image_counter) % int(5) == 1:
-                        takePicture(SCREENSHOT_FILENAME,GIF_picture_counter,screenshot)
-                        GIF_picture_counter +=1
-                        GIF_skip_image_counter = 0
-                    GIF_skip_image_counter +=1
-                    
-            except StopIteration:
-                #If program stops because end of sorting, gif needs to be created if selected
-                #Create green bars
-                a_set = set(range(display.numBars))
-                display.drawInterface(numbers, -1, -1, -1, -1, greenRows=a_set)
-                #Make sure they are saved for a second
-                takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, screenshot)
-                GIF_picture_counter += 1
-                takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, screenshot)
-                GIF_picture_counter += 1
-                takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, screenshot)
-                GIF_picture_counter += 1
-                # Call function for GIF
-                if display.outputFormatBox.get_active_option() == "GIF":
-                    createGIF(GIF_picture_counter,SCREENSHOT_FILENAME)
-                else:
-                    createMP4(GIF_picture_counter,SCREENSHOT_FILENAME)
-                #Reset counter
-                GIF_picture_counter = 0
-                GIF_skip_image_counter = 0
-                # Turn off sorting
-                display.do_sorting = False
-                
+            #This is needed bc both terminal mode and GUI mode needs to exist
+            createPicturesForOutput(False, GIF_picture_counter,GIF_skip_image_counter,numbers,alg_iterator,GIF_WINDOW_SIZE)
+            display.do_sorting = False
+            GIF_picture_counter = 0
+            GIF_skip_image_counter = 0
         elif display.do_sorting and display.paused: # animation paused
             display.drawInterface(numbers, -1, -1, -1, -1)
         else: # no animation
             a_set = set(range(display.numBars))
             display.drawInterface(numbers, -1, -1, -1, -1, greenRows=a_set)
 
+
 if __name__ == '__main__':
-    available_args = ["-f","-d","-s","-include"]
-    if sys.argv[1] == "help" or sys.argv[1] == "HELP" or sys.argv[1] == "Help":
-        print(f"Sorting Algorithm GIF Generator by TheStar19")
-        print(f"A fork of Sorting Algorithm Visualizer by LucasPilla")
-        print(f"Available args:{available_args}")
-        sys.exit(0)
-    if sys.argv[1] == "-v" or sys.argv[1] == "-V":
-        printL(4,"Debug enabled")
-        DEBUG = True
+    available_args = ["-f","-d","-s","-include","-l","-v"]
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "help" or sys.argv[1] == "HELP" or sys.argv[1] == "Help":
+            print("--------------------------------------------------------------")
+            print(f"Sorting Algorithm GIF Generator by TheStar19")
+            print(f"https://github.com/thestar19/Sorting-Algorithm-GIF-Generator")
+            print(f"A fork of Sorting Algorithm Visualizer by LucasPilla")
+            print(f"A GIF or video can be created either by:")
+            print(f"    1) Interacting with the GUI by running python3 src/main.py")
+            print(f"    2) Only using the terminal by providing arguments")
+            print(f"Currently, only Insertion sort is supported using terminal mode, but the rest can be reached via the GUI")
+            print(f"Available args:{available_args}")
+            print(f"Valid inputs:")
+            print(f"    Format: -f => GIF or MP4")
+            print(f"    Delay for each pic: -d => 1-3000")
+            print(f"    Size of array to sort: -s => 5-1000")
+            print(f"    Include numbers in bars in output: -include => True/False")
+            print(f"    Number of loops (GIF ONLY): -l => 0(inf)-9999")
+            print(f"    Output debug info (verbose): -v => True/False")
+            print("--------------------------------------------------------------")
+            sys.exit(0)
+        if sys.argv[1] == "-v" or sys.argv[1] == "-V":
+            printL(4,"Debug enabled")
+            DEBUG = True
     #Check if correct software is installed
     checkVersionOfPYAV()
     #Check for any args in program init
@@ -453,33 +493,86 @@ if __name__ == '__main__':
         output_delay = 1
         output_size = 100
         add_numbers_to_bars = False
+        output_loops = 0
+        print("This was added as a reminder:")
+        print("Add support for choosing sorting alg in terminal mode")
+        print("Also, you need some kind of check function for validating input")
+        sys.exit(0)
         for inst,value in instructions:
             #Check for output format
             if inst == "-f" and value in CURRENT_OUTPUT_FORMATS:
                 output_format = value
             elif inst == "-f" :
                 print(f"Incorrect args, -f value {value} is not supported")
-                break
+                sys.exit(0)
             #Check for delay value
             elif inst == "-d" and 1 < int(value) < 3000:
                 output_delay = int(value)
             elif inst == "-d" :
                 print(f"Incorrect args, -d value {value} is not an int between 1 and 3000")
-                break
+                sys.exit(0)
             #Check for size value
             elif inst == "-s" and 5 < int(value) < 1000:
                 output_size = int(value)
             elif inst == "-s":
                 print(f"Incorrect args, -s value {value} is not an int between 5 and 1000")
-                break
+                sys.exit(0)
             #Check for including numbers in bars or entire GUI
             elif inst == "-include" and value == "numbers":
                 add_numbers_to_bars = True
             elif inst == "-include":
                 print(f"Incorrect args, -include value {value} is not text \"numbers\"")
-                break
+                sys.exit(0)
+            elif inst == "-l" and 0 <= int(value) <= 9999:
+                output_loops = int(value)
+            elif inst == "-l":
+                print(f"Incorrect args, -l value {value} is not 0 <= value <= 9999")
+                sys.exit(0)
+            elif (inst == "-v" or inst == "-V") and value == "true":
+                DEBUG = True
+            elif (inst == "-v" or inst == "-V"):
+                print(f"Incorrect args, -v value {value} is not true or false")
+                sys.exit(0)
+        print(f"Creating output with these settings:")
+        print(f"Output format={output_format}")
+        print(f"Delay for each pic={output_delay}")
+        print(f"Number of elements in list to sort={output_size}")
+        print(f"Include numbers in bars={add_numbers_to_bars}")
+
+        #Create hidden screen surface
+        #display.createDisplay(pygame.HIDDEN)
+
+        # Just to make sure nothing from prev runs is left
+        deleteTempFiles()
+        # Create pictures if it does not exists
+        createPicturesFolder()
+        #Okay, so get this.
+        # If I import display before this, the window will render
+        # If I first do putenv & environ crap, then no window.
+        # This is very handy.
+        putenv('SDL_VIDEODRIVER', 'fbcon')
+        environ["SDL_VIDEODRIVER"] = "dummy"
+        import display as display
+        numbers = [randint(10, 400) for i in range(output_size)]  # random list to be sorted
+        alg_iterator = algorithmsDict["insertion"](numbers, 0, output_size - 1)  # initialize iterator
+
+        #Okay so, for the display module to work this has to be set.
+        # So honestly, instead of doing extra work this should be solved some other way.
+        display.algorithmBox.add_options(list(algorithmsDict.keys()))
+        display.outputFormatBox.add_options(CURRENT_OUTPUT_FORMATS)
+        display.numBars = output_size
+
+        GIF_picture_counter,_ = createPicturesForOutput(True,0,0,numbers,alg_iterator,(900, 400))
+        if output_format == "GIF":
+            createGIF(GIF_picture_counter,SCREENSHOT_FILENAME,output_delay,output_loops)
+        else:
+            createMP4(GIF_picture_counter,SCREENSHOT_FILENAME,output_delay)
+        print("GIF creation finished!")
         sys.exit()
         #all_args = sys.argv.split[]
+    # Yes, this is a really wierd place to import stuff
+    # But this is needed for current version of program
+    import display as display
     main()
 
 
