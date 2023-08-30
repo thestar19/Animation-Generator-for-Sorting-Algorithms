@@ -422,12 +422,64 @@ def main():
             display.drawInterface(numbers, -1, -1, -1, -1, greenRows=a_set)
 
 if __name__ == '__main__':
+    available_args = ["-f","-d","-s","-include"]
+    if sys.argv[1] == "help" or sys.argv[1] == "HELP" or sys.argv[1] == "Help":
+        print(f"Sorting Algorithm GIF Generator by TheStar19")
+        print(f"A fork of Sorting Algorithm Visualizer by LucasPilla")
+        print(f"Available args:{available_args}")
+        sys.exit(0)
+    if sys.argv[1] == "-v" or sys.argv[1] == "-V":
+        printL(4,"Debug enabled")
+        DEBUG = True
     #Check if correct software is installed
     checkVersionOfPYAV()
     #Check for any args in program init
-    if len(sys.argv) > 1:
-        if sys.argv[1] == "True" or sys.argv[1] == "true":
-            DEBUG = True
+    if len(sys.argv) > 2:
+        all_args = sys.argv.copy()
+        all_args.pop(0)
+        print("--------------------")
+        instructions = []
+        while True:
+            if len(all_args) > 1:
+                if all_args[0] in available_args:
+                    instructions.append((all_args.pop(0),all_args.pop(0)))
+                else:
+                    print(f"Incorrects arg options")
+                    print(f"Available args:{available_args}")
+                    sys.exit(0)
+            else:
+                break
+        output_format = "GIF"
+        output_delay = 1
+        output_size = 100
+        for inst,value in instructions:
+            print(inst)
+            #Check for output format
+            if inst == "-f" and value in CURRENT_OUTPUT_FORMATS:
+                output_format = value
+            elif inst == "-f" :
+                print(f"Incorrect args, -f value {value} is not supported")
+                break
+            #Check for delay value
+            elif inst == "-d" and 1 < int(value) < 3000:
+                output_delay = int(value)
+            elif inst == "-d" :
+                print(f"Incorrect args, -d value {value} is not an int between 1 and 3000")
+                break
+            #Check for size value
+            elif inst == "-s" and 5 < int(value) < 1000:
+                output_size = int(value)
+            elif inst == "-s":
+                print(f"Incorrect args, -s value {value} is not an int between 5 and 1000")
+                break
+            #Check for including numbers in bars or entire GUI
+            elif inst == "-include" and value == "numbers":
+                output_size = int(value)
+            elif inst == "-include":
+                print(f"Incorrect args, -include value {value} is not text \"numbers\"")
+                break
+        sys.exit()
+        #all_args = sys.argv.split[]
     main()
 
 
