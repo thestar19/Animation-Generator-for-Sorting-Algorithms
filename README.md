@@ -17,12 +17,20 @@ Contributions are welcome. This project is still very new so much work is needed
 :exclamation: Feel free to open an issue if you have some problem :exclamation:
 
 ## Using the application
-Right now probably limited to Linux
+Right now only tested in Ubuntu x64 22.04.1-desktop
+### Installation
 - Clone GitHub repository `git clone https://github.com/thestar19/Sorting-Algorithm-GIF-Generator.git`
 - Install requirements: `pip3 install -r requirements.txt`
 - Run: `python3 src/main.py`
-
-- To output extra info, run `python3 src/main.py true`
+### Verbose mode
+- To output extra info, run `python3 src/main.py -v`
+- To see further information about the program, run `python3 src/main.py help`
+### Terminal mode
+To generate an animation without interacting with the program's graphical interface:
+- Run eg `python3 src/main.py -f GIF -s 50 -d 50 -l 0 -a quick`
+  
+This will create a GIF in the main folder of Quicksort sorting an array of 50 elements with a delay for each pic of 50ms and infinite looping.\
+To see all options, run `python3 src/main.py help`
 
 ## Common troubleshooting steps:
 ### Install pip
