@@ -6,12 +6,12 @@ from random import randint
 # Initialize pygame modules
 pygame.init()
 
-# Display settings
-windowSize = (900, 800)
-screen = pygame.display.set_mode(windowSize)
-
+#This will be set later
 #pygame.display.set_caption('Sorting Algorithm Animation Generator')
 pygame.display.set_caption('Sorting Algorithm GIF Generator')
+
+windowSize = (900, 800)
+screen = pygame.display.set_mode(windowSize)
 
 # Font
 baseFont = pygame.font.SysFont('Arial', 24)
@@ -25,7 +25,11 @@ red = (255, 50, 50)
 black = (0, 0, 0)
 blue = (50, 50, 255)
 
-
+def createDisplay(showOrHide):
+    #global screen
+    # Display settings
+    windowSize = (900, 800)
+    #screen = pygame.display.set_mode(windowSize,flags=showOrHide)
 
 class Box:
     def __init__(self, rect):
@@ -107,7 +111,7 @@ class TextBox(InputBox):
     def __init__(self, name, color, rect, text='100'):
         super().__init__(name, color, rect)
         self.text = text
-        self.draw()  # establish the correct width for initial rendering
+        #self.draw()  # establish the correct width for initial rendering
 
     def draw(self):
         super().draw()
@@ -451,7 +455,7 @@ def drawInterface(array, redBar1, redBar2, blueBar1, blueBar2, **kwargs):
         draw_rect_alpha(screen, (255, 255, 0, 127), [(850 / 2) + 10, 150 + 10, 10, 50])
         draw_rect_alpha(screen, (255, 255, 0, 127), [(850 / 2) + 40, 150 + 10, 10, 50])
 
-    elif not paused and (time() - timer_space_bar) < 0.2:
+    elif not paused and (time() - timer_space_bar) < 0.1:
         x, y = (850 / 2), 150
         draw_polygon_alpha(screen, (150, 255, 150, 127),
                            ((x + 10, y + 10), (x + 10, y + 50 + 10), (x + 50, y + 25 + 10)))
