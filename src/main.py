@@ -150,10 +150,22 @@ def deleteType(theType):
         counter +=1
 
 # Function that clears terminal and write new info.
-# To activate, set textLogUpdate = True, usually it will run shortly
-def updateDisplay():
+# To activate, set TEXTLOG_UPDATE = True
+# Usually, there is no need to run the function after setting TEXTLOG_UPDATE bc it will run soon anyway.
+def updateDisplay(terminal = False):
     global TEXTLOG
     global TEXTLOG_UPDATE
+    if terminal:
+        currentMax = 0
+        for (type,value) in TEXTLOG:
+            if type != 2:
+                print(value)
+            elif currentMax < value:
+                currentMax = value
+        if currentMax > 0:
+            print(f"Current progress in writing to disk:{currentMax}%")
+        TEXTLOG.clear()
+        return -1
     # Without this, much resources would be wasted on rewriting log terminal display
     if not TEXTLOG_UPDATE:
         return -1
@@ -184,8 +196,8 @@ def writeGifFile(listOfImages,numberOfLoops,delay):
     newGif.close()
 
 # Create GIF using existing files
-def createGIF(counter,SCREENSHOT_FILENAME,delay,loops):
-    updateDisplay()
+def createGIF(counter,SCREENSHOT_FILENAME,delay,loops,terminal=False):
+    updateDisplay(terminal)
     #Idea is that pictures are generated with numbers 0 to some MAX
     printL(1,"Trying to generate GIF, this may freeze the program and take a while")
     fileNames = []
@@ -199,17 +211,17 @@ def createGIF(counter,SCREENSHOT_FILENAME,delay,loops):
     printL(4, "Accurate gif settings is applied \n Therefore every frame from animation will be in GIF.")
     printL(4, "This increases time to generate, but also more accurately displays how sorting function works.")
     printL(4, f"Total number of recorded images: {str(len(fileNames))}")
-    updateDisplay()
+    updateDisplay(terminal)
     listOfImages = []
     for (counter, filename) in enumerate(fileNames):
-        if counter % 100 == 1:
-            updateDisplay()
+        if counter % 1000 == 1:
+            updateDisplay(terminal)
         listOfImages.append(iio.imread(filename))
         printProgress(int(((counter) / len(fileNames)) * 100*0.7))
     printL(1, "Writing GIF to disk")
     writeGifFile(listOfImages,loops,delay)
     printProgress(100)
-    updateDisplay()
+    updateDisplay(terminal)
     #Del latest list, this does NOT decrease current RAM usage,
     #but makes next round use the same memory area instead
     printL(1,"Cleaning up remaining files")
@@ -220,15 +232,15 @@ def createGIF(counter,SCREENSHOT_FILENAME,delay,loops):
     #Delete all files in folder
     #deleteTempFiles()
     deleteType(2)
-    updateDisplay()
+    updateDisplay(terminal)
 
 # Create MP4 using existing files
-def createMP4(counter,SCREENSHOT_FILENAME,delay):
-    updateDisplay()
+def createMP4(numberOfPictures,SCREENSHOT_FILENAME,delay,terminal=False):
+    updateDisplay(terminal)
     #Idea is that pictures are generated with numbers 0 to some MAX
     printL(1,"Trying to generate MP4, this may freeze the program and take a while")
     fileNames = []
-    for i in range(0,counter):
+    for i in range(0,numberOfPictures):
         fileNames.append(f"{SCREENSHOT_FILENAME}{str(i)}.jpg")
     #This will start to load in individual pictures into gif engine
     deleteExistingFile("sorting.mp4")
@@ -237,22 +249,22 @@ def createMP4(counter,SCREENSHOT_FILENAME,delay):
     printL(4, "This increases time to generate, but also more accurately displays how sorting function works.")
     printL(4, f"Total number of recorded images: {str(len(fileNames))}")
     printL(4,f"Ignoring looping options because MP4 format does not support")
-    updateDisplay()
+    updateDisplay(terminal)
     with iio.imopen("sorting.mp4","w",plugin="pyav") as newVideo:
         newVideo.init_video_stream("mpeg4",fps=30)
         frameCounter = int((delay * 30)/1000) #Formula to get number of repeat images for delay
         if frameCounter < 1:
             frameCounter = 1
         for (counter, filename) in enumerate(fileNames):
-            if counter % 100 == 1 or counter < 200:
-                updateDisplay()
+            if counter % 500 == 458 or numberOfPictures < 50:
+                updateDisplay(terminal)
+                printProgress(int(((counter) / len(fileNames)) * 100))
             aFrame = iio.imread(filename) #So we don't read it more than once
             for _ in range(frameCounter):
                 newVideo.write_frame(aFrame)
-            printProgress(int(((counter) / len(fileNames)) * 100))
     printL(1, "Writing MP4 to disk")
     printProgress(100)
-    updateDisplay()
+    updateDisplay(terminal)
     #Del latest list, this does NOT decrease current RAM usage,
     #but makes next round use the same memory area instead
     printL(1,"Cleaning up remaining files")
@@ -262,7 +274,7 @@ def createMP4(counter,SCREENSHOT_FILENAME,delay):
     #Delete all files in folder
     deleteTempFiles()
     deleteType(2)
-    updateDisplay()
+    updateDisplay(terminal)
 
 #Given a list of filenames, it returns what number the highest file has.
 def getMaxNumber(files):
@@ -306,7 +318,9 @@ def createPicturesForOutput(TERMINAL_MODE,GIF_picture_counter,GIF_skip_image_cou
     global SCREENSHOT_FILENAME
     try:
         while True:
-            printL(4,f"Current pic count:{GIF_picture_counter}")
+            if len(numbers) < 50 or GIF_picture_counter % 1000 == 5:
+                updateDisplay(TERMINAL_MODE)
+                printL(4,f"Current pic count:{GIF_picture_counter}")
             numbers, redBar1, redBar2, blueBar1, blueBar2 = next(alg_iterator)
             display.drawInterface(numbers, redBar1, redBar2, blueBar1, blueBar2)
             screenshot = pygame.Surface(GIF_WINDOW_SIZE)
@@ -445,9 +459,19 @@ def main():
             a_set = set(range(display.numBars))
             display.drawInterface(numbers, -1, -1, -1, -1, greenRows=a_set)
 
+def validateInput(type,input):
+    if type == "int":
+        try:
+            return (True,int(input))
+        except TypeError:
+            return (False,input)
+        except ValueError:
+            return (False, input)
+    return (None,input)
+
 
 if __name__ == '__main__':
-    available_args = ["-f","-d","-s","-include","-l","-v"]
+    available_args = ["-f","-d","-s","-include","-l","-v","-a"]
     if len(sys.argv) > 1:
         if sys.argv[1] == "help" or sys.argv[1] == "HELP" or sys.argv[1] == "Help":
             print("--------------------------------------------------------------")
@@ -457,7 +481,7 @@ if __name__ == '__main__':
             print(f"A GIF or video can be created either by:")
             print(f"    1) Interacting with the GUI by running python3 src/main.py")
             print(f"    2) Only using the terminal by providing arguments")
-            print(f"Currently, only Insertion sort is supported using terminal mode, but the rest can be reached via the GUI")
+            print(f"Available sorting algorithms:{list(algorithmsDict.keys())}")
             print(f"Available args:{available_args}")
             print(f"Valid inputs:")
             print(f"    Format: -f => GIF or MP4")
@@ -494,10 +518,7 @@ if __name__ == '__main__':
         output_size = 100
         add_numbers_to_bars = False
         output_loops = 0
-        print("This was added as a reminder:")
-        print("Add support for choosing sorting alg in terminal mode")
-        print("Also, you need some kind of check function for validating input")
-        sys.exit(0)
+        output_alg = "insertion"
         for inst,value in instructions:
             #Check for output format
             if inst == "-f" and value in CURRENT_OUTPUT_FORMATS:
@@ -505,17 +526,11 @@ if __name__ == '__main__':
             elif inst == "-f" :
                 print(f"Incorrect args, -f value {value} is not supported")
                 sys.exit(0)
-            #Check for delay value
-            elif inst == "-d" and 1 < int(value) < 3000:
-                output_delay = int(value)
-            elif inst == "-d" :
-                print(f"Incorrect args, -d value {value} is not an int between 1 and 3000")
-                sys.exit(0)
-            #Check for size value
-            elif inst == "-s" and 5 < int(value) < 1000:
-                output_size = int(value)
-            elif inst == "-s":
-                print(f"Incorrect args, -s value {value} is not an int between 5 and 1000")
+            #Check for debug mode, verbose
+            elif (inst == "-v" or inst == "-V") and value == "true":
+                DEBUG = True
+            elif inst == "-v" or inst == "-V":
+                print(f"Incorrect args, -v value {value} is not true or false")
                 sys.exit(0)
             #Check for including numbers in bars or entire GUI
             elif inst == "-include" and value == "numbers":
@@ -523,24 +538,40 @@ if __name__ == '__main__':
             elif inst == "-include":
                 print(f"Incorrect args, -include value {value} is not text \"numbers\"")
                 sys.exit(0)
-            elif inst == "-l" and 0 <= int(value) <= 9999:
-                output_loops = int(value)
-            elif inst == "-l":
-                print(f"Incorrect args, -l value {value} is not 0 <= value <= 9999")
+            elif inst == "-a" and value in list(algorithmsDict.keys()):
+                output_alg = value
+            elif inst == "-a":
+                print(f"Incorrect args, -a value {value} is not in accepted sorting alg")
                 sys.exit(0)
-            elif (inst == "-v" or inst == "-V") and value == "true":
-                DEBUG = True
-            elif (inst == "-v" or inst == "-V"):
-                print(f"Incorrect args, -v value {value} is not true or false")
-                sys.exit(0)
+            isInt,newValue = validateInput("int",value)
+            if isInt and inst in "-d -s -l":
+                #Check for delay value
+                if inst == "-d" and 1 <= int(newValue) <= 3000:
+                    output_delay = int(newValue)
+                elif inst == "-d" :
+                    print(f"Incorrect args, -d value {newValue} is not an int between 1 and 3000")
+                    sys.exit(0)
+                #Check for size value
+                elif inst == "-s" and 5 < int(newValue) <= 1000:
+                    output_size = int(newValue)
+                elif inst == "-s":
+                    print(f"Incorrect args, -s value {newValue} is not an int between 5 and 1000")
+                    sys.exit(0)
+                #Check for number of loops
+                elif inst == "-l" and 0 <= int(newValue) <= 9999:
+                    output_loops = int(newValue)
+                elif inst == "-l":
+                    print(f"Incorrect args, -l value {newValue} is not 0 <= value <= 9999")
+                    sys.exit(0)
         print(f"Creating output with these settings:")
-        print(f"Output format={output_format}")
-        print(f"Delay for each pic={output_delay}")
-        print(f"Number of elements in list to sort={output_size}")
-        print(f"Include numbers in bars={add_numbers_to_bars}")
+        print(f"    Output format={output_format}")
+        print(f"    Delay for each pic={output_delay}")
+        print(f"    Number of elements in list to sort={output_size}")
+        print(f"    Include numbers in bars={add_numbers_to_bars}")
+        print(f"    Sorting alg={output_alg}")
+        if output_format == "GIF":
+            print(f"    Number of loops={output_loops}")
 
-        #Create hidden screen surface
-        #display.createDisplay(pygame.HIDDEN)
 
         # Just to make sure nothing from prev runs is left
         deleteTempFiles()
@@ -549,7 +580,7 @@ if __name__ == '__main__':
         #Okay, so get this.
         # If I import display before this, the window will render
         # If I first do putenv & environ crap, then no window.
-        # This is very handy.
+        # For terminal mode, having no display thing pop up is a good feature.
         putenv('SDL_VIDEODRIVER', 'fbcon')
         environ["SDL_VIDEODRIVER"] = "dummy"
         import display as display
@@ -561,12 +592,11 @@ if __name__ == '__main__':
         display.algorithmBox.add_options(list(algorithmsDict.keys()))
         display.outputFormatBox.add_options(CURRENT_OUTPUT_FORMATS)
         display.numBars = output_size
-
         GIF_picture_counter,_ = createPicturesForOutput(True,0,0,numbers,alg_iterator,(900, 400))
         if output_format == "GIF":
-            createGIF(GIF_picture_counter,SCREENSHOT_FILENAME,output_delay,output_loops)
+            createGIF(GIF_picture_counter,SCREENSHOT_FILENAME,output_delay,output_loops,True)
         else:
-            createMP4(GIF_picture_counter,SCREENSHOT_FILENAME,output_delay)
+            createMP4(GIF_picture_counter,SCREENSHOT_FILENAME,output_delay,True)
         print("GIF creation finished!")
         sys.exit()
         #all_args = sys.argv.split[]
