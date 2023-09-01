@@ -9,6 +9,10 @@ import shlex
 import random
 import datetime
 
+# Global Variables
+BENCHMARK_TEXT_FILE = "temp_file_for_benchmark.txt"
+
+
 def __uniqueid__():
     """
       generate unique id with length 17 to 21.
@@ -72,6 +76,21 @@ def __uniqueid__():
 """ you get a new id for each call of uniqueid() """
 uniqueid=__uniqueid__()
 
+class result(object):
+    def __init__(self,i,rounds,append,max_len,min_len,print_time,standard_benchmark,format,algorithm,myTime,mySize,myNumberOfPictures):
+        self.round_ID = i
+        self.rounds = rounds
+        self.append = append
+        self.max_len = max_len
+        self.min_len = min_len
+        self.print_time = print_time
+        self.standard_benchmark = standard_benchmark
+        self.format = format
+        self.algorithm = algorithm
+        self.myTime = myTime
+        self.mySize = mySize
+        self.myNumberOfPictures = myNumberOfPictures
+
 def printIF(value,print_time,end=""):
     if print_time:
         print(value,end)
@@ -79,13 +98,121 @@ def printIF(value,print_time,end=""):
 def runCommand(command):
     return subprocess.Popen(shlex.split(command), shell=False, stdout=subprocess.PIPE).stdout.read()
 
-def main(rounds,append,max_len,min_len,print_time,standard_benchmark,format,algorithm):
-    #Change to standard_benchmark
-    if not standard_benchmark:
-        print("Standard benchmark")
+def deleteExistingFile(name):
+    if os.path.exists(name):
+        try:
+            os.remove(name)
+        except:
+            print(f"Could not remove {name}")
+
+def readNumberOfPictures():
+    f = open(BENCHMARK_TEXT_FILE,"r")
+    data = f.readline().split("=")[1]
+    f.close()
+    deleteExistingFile(BENCHMARK_TEXT_FILE)
+    return int(data)
+
+def runABatch(rounds,min_len,max_len,format,algorithm,print_time):
+    timeLog = []
+    for i in range(rounds):
+        size = 0
+        if min_len == max_len:
+            size = min_len
+        else:
+            size = random.randint(min_len, max_len)
+        command = f"python3 src/main.py -f {format} -s {size} -d 10 -l 0 -a {algorithm} -bench true"
+        aTimer = timeit.Timer(lambda: runCommand(command))
+        thisTime = aTimer.timeit(3)
+        numberOfPictures = readNumberOfPictures()
+        timeLog.append(result(i,rounds,True,min_len,max_len,format,size,algorithm,print_time,thisTime,size,numberOfPictures))
+        printIF(f"Round {i}, Time:{thisTime}, Format:{format}, Algorithm: {algorithm}, Size of array:{size}, Number of pictures generated:{numberOfPictures}", print_time)
+    return timeLog
+
+def main():
+    if len(sys.argv) < 2:
+        print(f"No valid arguments found")
+        sys.exit(0)
+    # ----------------------------------------------------------------------------------------------
+    #This section is for dealing with accepting all args
+    all_args = sys.argv.copy()
+    all_args.pop(0)
+    print("--------------------------------------------------------------")
+    instructions = []
+    while True:
+        if len(all_args) > 1:
+            if all_args[0] in available_args:
+                instructions.append((all_args.pop(0),all_args.pop(0)))
+            else:
+                print(f"Incorrect arguments")
+                print(f"Available args:{available_args}")
+                sys.exit(0)
+        else:
+            break
+    rounds = 5
+    append = False
+    max_len = 50
+    min_len = 10
+    print_time = True
+    standard_benchmark = False
+    format = "GIF"
+    algorithm = "insertion"
+    for inst,value in instructions:
+        # Check for -a arg
+        if (inst == "-a" or inst == "-append_to_log") and (value == "true" or value == "false"):
+            append = True
+        elif (inst == "-a" or inst == "-append_to_log"):
+            print(f"Incorrect args, -a value {value} is not an int between 1 and 999")
+            sys.exit(0)
+        # Check for standard arg
+        if (inst == "-standard") and (value == "true"):
+            standard_benchmark = True
+        elif (inst == "-standard"):
+            print(f"Incorrect args, -s value {value} is not true or false")
+            sys.exit(0)
+        # Check for -time arg
+        if (inst == "-t" or inst == "-time") and (value == "true" or value == "false"):
+            print_time = True
+        elif (inst == "-t" or inst == "-time"):
+            print(f"Incorrect args, -t value {value} is not true or false")
+            sys.exit(0)
+        if (inst == "-f" or inst == "-format") and (value == "MP4" or value == "GIF"):
+            format = value
+        elif (inst == "-f" or inst == "-format"):
+            print(f"Incorrect args, -f value {value} is not GIF or MP4")
+            sys.exit(0)
+        if (inst == "-alg" or inst == "-algorithm") and (value in list(algorithmsDict.keys())):
+            algorithm = value
+        elif (inst == "-f" or inst == "-format"):
+            print(f"Incorrect args, -f value {value} is not GIF or MP4")
+            sys.exit(0)
+        isInt, newValue = validateInput("int", value)
+        if isInt:
+            if (inst == "-r" or inst == "-rounds") and 0 < newValue < 1000:
+                rounds = newValue
+            elif (inst == "-r" or inst == "-rounds"):
+                print(f"Incorrect args, -r value {value} is not an int between 1 and 999")
+                sys.exit(0)
+            if (inst == "-max") and 1 < newValue < 1000:
+                max_len = newValue
+            elif (inst == "-max"):
+                print(f"Incorrect args, -max value {value} is not an int between 100 and 1000")
+                sys.exit(0)
+            if (inst == "-min") and   1 < newValue < 1000:
+                min_len = newValue
+            elif (inst == "-min"):
+                print(f"Incorrect args, -min value {value} is not an int between 1 and 1000")
+                sys.exit(0)
+    if max_len < min_len:
+        print(f"Incorrect args, min value {min_len} is not smaller than max value {max_len}")
+        sys.exit(0)
+    #----------------------------------------------------------------------------------------------
+    # This is where actual benchmark happens
+    # Change to standard_benchmark
+    if standard_benchmark:
+        print(f"Standard benchmark is true, therefore most other settings are ignored")
         #Change to if append
-        if False:
-            file = open(benchmark_results.txt,"a")
+        if append:
+            print("Appending results to benchmark results")
             # # are ignored
             # each entry begins with 20x -----
             # each entry then has a date=
@@ -109,28 +236,23 @@ def main(rounds,append,max_len,min_len,print_time,standard_benchmark,format,algo
             file.write(f"total_size_sum={timeSizeSum}")
             file.close()
     else:
-        timeLog = []
-        for i in range(rounds):
-            size = random.randint(min_len,max_len)
-            command = f"python3 src/main.py -f {format} -s {size} -d 10 -l 0 -a {algorithm}"
-            aTimer = timeit.Timer(lambda: runCommand(command))
-            thisTime = aTimer.timeit(1)
-            timeLog.append((thisTime,size))
-            printIF(f"Round {i}: {thisTime}, Size of array:{size}",print_time)
-        timeSum = 0
-        timeSizeSum = 0
-        totalSize = 0
-        for thisTime,thisSize in timeLog:
-            timeSum += thisTime
-            timeSizeSum += thisTime/thisSize
-            totalSize += thisSize
+        timeLog = runABatch(rounds, min_len, max_len, format, algorithm, print_time)
+        pictures = []
+        times = []
+        sizes = []
+        for result in timeLog:
+            pictures.append(result.myNumberOfPictures)
+            times.append(result.myTime)
+            sizes.append(result.mySize)
         printIF(f"------Timing results------", print_time)
         printIF(f"Rounds:{rounds}",print_time)
         printIF(f"Min length of array to be sorted:{min_len}",print_time)
         printIF(f"Max length of array to be sorted:{max_len}",print_time)
-        printIF(f"Total length of all arrays sorted:{totalSize}",print_time)
-        printIF(f"Avg time:{timeSum/len(timeLog)}",print_time)
-        printIF(f"Avg time/size:{timeSizeSum/len(timeLog)}",print_time)
+        printIF(f"Total length of all arrays sorted:{sum(sizes)}",print_time)
+        printIF(f"Total number of pictures created:{sum(pictures)}", print_time)
+        printIF(f"Avg time:{sum(times)/len(timeLog)}",print_time)
+        printIF(f"Avg time/size:{(sum(times)/len(timeLog))/sum(sizes)}",print_time)
+        printIF(f"Avg time per picture:{sum(pictures)/sum(times)}",print_time)
 
 def validateInput(type,input):
     if type == "int":
@@ -145,7 +267,7 @@ def validateInput(type,input):
 
 if __name__ == '__main__':
     available_args = ["-r","-rounds","-max","-min","-time","-t", \
-                      "-append_to_log","-a_t_l","-standard","-s","-f","-format", \
+                      "-append_to_log","-a_t_l","-standard","-f","-format", \
                       "-algorithm","-alg"]
     if len(sys.argv) > 1:
         if len(sys.argv) == 2 and sys.argv[1] == "help":
@@ -154,81 +276,6 @@ if __name__ == '__main__':
             print(f"Sorting Algorithm GIF Generator by TheStar19")
             print(f"https://github.com/thestar19/Sorting-Algorithm-GIF-Generator")
             print(f"A fork of Sorting Algorithm Visualizer by LucasPilla")
-            #print(f"")
+            print(f"Available arguments:{available_args}")
             print("--------------------------------------------------------------")
-    if len(sys.argv) > 2:
-        all_args = sys.argv.copy()
-        all_args.pop(0)
-        print("--------------------------------------------------------------")
-        instructions = []
-        while True:
-            if len(all_args) > 1:
-                if all_args[0] in available_args:
-                    instructions.append((all_args.pop(0),all_args.pop(0)))
-                else:
-                    print(f"Incorrect arguments")
-                    print(f"Available args:{available_args}")
-                    sys.exit(0)
-            else:
-                break
-        rounds = 5
-        append = False
-        max_len = 50
-        min_len = 10
-        print_time = True
-        standard_benchmark = False
-        format = "GIF"
-        algorithm = "insertion"
-        for inst,value in instructions:
-            # Check for -a arg
-            if (inst == "-a" or inst == "-append_to_log") and (value == "true" or value == "false"):
-                append = True
-            elif (inst == "-a" or inst == "-append_to_log"):
-                print(f"Incorrect args, -a value {value} is not an int between 1 and 999")
-                sys.exit(0)
-            # Check for standard arg
-            if (inst == "-s" or inst == "-standard") and (value == "true" or value == "false"):
-                standard_benchmark = True
-            elif (inst == "-s" or inst == "-standard"):
-                print(f"Incorrect args, -s value {value} is not true or false")
-                sys.exit(0)
-            # Check for -time arg
-            if (inst == "-t" or inst == "-time") and (value == "true" or value == "false"):
-                print_time = True
-            elif (inst == "-t" or inst == "-time"):
-                print(f"Incorrect args, -t value {value} is not true or false")
-                sys.exit(0)
-            if (inst == "-f" or inst == "-format") and (value == "MP4" or value == "GIF"):
-                format = value
-            elif (inst == "-f" or inst == "-format"):
-                print(f"Incorrect args, -f value {value} is not GIF or MP4")
-                sys.exit(0)
-            if (inst == "-alg" or inst == "-algorithm") and (value in list(algorithmsDict.keys())):
-                algorithm = value
-            elif (inst == "-f" or inst == "-format"):
-                print(f"Incorrect args, -f value {value} is not GIF or MP4")
-                sys.exit(0)
-            isInt, newValue = validateInput("int", value)
-            if isInt:
-                if (inst == "-r" or inst == "-rounds") and 0 < newValue < 1000:
-                    rounds = newValue
-                elif (inst == "-r" or inst == "-rounds"):
-                    print(f"Incorrect args, -r value {value} is not an int between 1 and 999")
-                    sys.exit(0)
-                if (inst == "-max") and 1 < newValue < 1000:
-                    max_len = newValue
-                elif (inst == "-max"):
-                    print(f"Incorrect args, -max value {value} is not an int between 100 and 1000")
-                    sys.exit(0)
-                if (inst == "-min") and   1 < newValue < 1000:
-                    min_len = newValue
-                elif (inst == "-min"):
-                    print(f"Incorrect args, -min value {value} is not an int between 1 and 1000")
-                    sys.exit(0)
-        if max_len < min_len:
-            print(f"Incorrect args, min value {min_len} is not smaller than max value {max_len}")
-            sys.exit(0)
-        if standard_benchmark:
-            print("No standard implemented")
-        # Only call main iff all criteria have been satisfied
-        main(rounds,append,max_len,min_len,print_time,standard_benchmark,format,algorithm)
+    main()

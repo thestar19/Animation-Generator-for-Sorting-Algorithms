@@ -39,6 +39,7 @@ TEXTLOG_UPDATE = True
 DEBUG = False
 CURRENT_OUTPUT_FORMATS = ["GIF","MP4"]
 SCREENSHOT_FILENAME = "pictures/screenshot"  # + a counter number + JPG
+BENCHMARK_TEXT_FILE = "temp_file_for_benchmark.txt"
 
 #printL types:
 # 1 = normal log message
@@ -471,7 +472,7 @@ def validateInput(type,input):
 
 
 if __name__ == '__main__':
-    available_args = ["-f","-d","-s","-include","-l","-v","-a"]
+    available_args = ["-f","-d","-s","-include","-l","-v","-a","-bench"]
     if len(sys.argv) > 1:
         if sys.argv[1] == "help" or sys.argv[1] == "HELP" or sys.argv[1] == "Help":
             print("--------------------------------------------------------------")
@@ -487,9 +488,10 @@ if __name__ == '__main__':
             print(f"    Format: -f => GIF or MP4")
             print(f"    Delay for each pic: -d => 1-3000")
             print(f"    Size of array to sort: -s => 5-1000")
-            print(f"    Include numbers in bars in output: -include => True/False")
+            print(f"    Include numbers in bars in output: -include => true/false")
             print(f"    Number of loops (GIF ONLY): -l => 0(inf)-9999")
-            print(f"    Output debug info (verbose): -v => True/False")
+            print(f"    Output debug info (verbose): -v => true/false")
+            print(f"    Reserved use for benchmark: -bench => true/false")
             print("--------------------------------------------------------------")
             sys.exit(0)
         if sys.argv[1] == "-v" or sys.argv[1] == "-V":
@@ -519,6 +521,7 @@ if __name__ == '__main__':
         add_numbers_to_bars = False
         output_loops = 0
         output_alg = "insertion"
+        benchmark = False
         for inst,value in instructions:
             #Check for output format
             if inst == "-f" and value in CURRENT_OUTPUT_FORMATS:
@@ -538,10 +541,16 @@ if __name__ == '__main__':
             elif inst == "-include":
                 print(f"Incorrect args, -include value {value} is not text \"numbers\"")
                 sys.exit(0)
+            # Check for which algorithm to run
             elif inst == "-a" and value in list(algorithmsDict.keys()):
                 output_alg = value
             elif inst == "-a":
                 print(f"Incorrect args, -a value {value} is not in accepted sorting alg")
+                sys.exit(0)
+            elif inst == "-bench" and value == "true":
+                benchmark = True
+            elif inst == "-bench":
+                print(f"Incorrect args, -bench value {value} is not true or false")
                 sys.exit(0)
             isInt,newValue = validateInput("int",value)
             if isInt and inst in "-d -s -l":
@@ -597,6 +606,11 @@ if __name__ == '__main__':
             createGIF(GIF_picture_counter,SCREENSHOT_FILENAME,output_delay,output_loops,True)
         else:
             createMP4(GIF_picture_counter,SCREENSHOT_FILENAME,output_delay,True)
+        if benchmark:
+            deleteExistingFile(BENCHMARK_TEXT_FILE)
+            f = open(BENCHMARK_TEXT_FILE,"w")
+            f.write(f"pictures={GIF_picture_counter}")
+            f.close()
         print("GIF creation finished!")
         sys.exit()
         #all_args = sys.argv.split[]
