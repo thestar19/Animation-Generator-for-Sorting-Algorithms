@@ -130,6 +130,7 @@ def checkVersionOfPYAV():
                 exists = True
         if exists:
             printL(4,"Correct version of pyav detected")
+            deleteExistingFile("temp.mp4")
             #This is kinda wierd, but is really just so control-flow works correctly.
             return
         else:

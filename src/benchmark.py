@@ -1,4 +1,4 @@
-import os
+from os import path,remove
 #import display
 #import main
 import subprocess
@@ -10,7 +10,8 @@ import random
 import datetime
 
 # Global Variables
-BENCHMARK_TEXT_FILE = "temp_file_for_benchmark.txt"
+BENCHMARK_TEMP_TEXT_FILE = "temp_file_for_benchmark.txt"
+BENCHMARK_RESULTS_FILE = "benchmark_results.txt"
 
 
 def __uniqueid__():
@@ -46,8 +47,8 @@ def __uniqueid__():
 
       an average of 40000 id/second
     """
-    mynow=datetime.now
-    sft=datetime.strftime
+    mynow=datetime.datetime.now
+    sft=datetime.datetime.strftime
     # store old datetime each time in order to check if we generate during same microsecond (glucky wallet !)
     # or if daylight savings event occurs (when clocks are adjusted backward) [rarely detected at this level]
     old_time=mynow() # fake init - on very speed machine it could increase your seed to seed + 1... but we have our contingency :)
@@ -77,19 +78,13 @@ def __uniqueid__():
 uniqueid=__uniqueid__()
 
 class result(object):
-    def __init__(self,i,rounds,append,max_len,min_len,print_time,standard_benchmark,format,algorithm,myTime,mySize,myNumberOfPictures):
-        self.round_ID = i
-        self.rounds = rounds
-        self.append = append
-        self.max_len = max_len
-        self.min_len = min_len
-        self.print_time = print_time
-        self.standard_benchmark = standard_benchmark
+    def __init__(self,format,size,algorithm,thisTime,numberOfPictures,auto_loop):
+        self.rounds = auto_loop
         self.format = format
         self.algorithm = algorithm
-        self.myTime = myTime
-        self.mySize = mySize
-        self.myNumberOfPictures = myNumberOfPictures
+        self.thisTime = thisTime
+        self.size = size
+        self.numberOfPictures = numberOfPictures
 
 def printIF(value,print_time,end=""):
     if print_time:
@@ -99,36 +94,54 @@ def runCommand(command):
     return subprocess.Popen(shlex.split(command), shell=False, stdout=subprocess.PIPE).stdout.read()
 
 def deleteExistingFile(name):
-    if os.path.exists(name):
+    if path.exists(name):
         try:
-            os.remove(name)
+            remove(name)
         except:
             print(f"Could not remove {name}")
 
 def readNumberOfPictures():
-    f = open(BENCHMARK_TEXT_FILE,"r")
+    global BENCHMARK_TEMP_TEXT_FILE
+    f = open(BENCHMARK_TEMP_TEXT_FILE,mode="r")
     data = f.readline().split("=")[1]
     f.close()
-    deleteExistingFile(BENCHMARK_TEXT_FILE)
+    deleteExistingFile(BENCHMARK_TEMP_TEXT_FILE)
     return int(data)
 
-def runABatch(rounds,min_len,max_len,format,algorithm,print_time):
-    timeLog = []
-    for i in range(rounds):
-        size = 0
-        if min_len == max_len:
-            size = min_len
-        else:
-            size = random.randint(min_len, max_len)
-        command = f"python3 src/main.py -f {format} -s {size} -d 10 -l 0 -a {algorithm} -bench true"
-        aTimer = timeit.Timer(lambda: runCommand(command))
-        thisTime = aTimer.timeit(3)
-        numberOfPictures = readNumberOfPictures()
-        timeLog.append(result(i,rounds,True,min_len,max_len,format,size,algorithm,print_time,thisTime,size,numberOfPictures))
-        printIF(f"Round {i}, Time:{thisTime}, Format:{format}, Algorithm: {algorithm}, Size of array:{size}, Number of pictures generated:{numberOfPictures}", print_time)
-    return timeLog
+# # are ignored
+# each entry begins with 20x -----
+# each entry then has a date=
+# each entry then has its unique id
+# each entry then has:
+#   rounds=int
+#   size=int
+#   time=float
+#   format="GIF"/"MP4"
+#   alg=name of alg
+#   numberOfPictures=int
+def appendResult(aResult):
+    global BENCHMARK_RESULTS_FILE
+    with open(BENCHMARK_RESULTS_FILE, mode="a") as file:
+        file.write("--------------------\n")
+        file.write(f"date={datetime.datetime.now()}\n")
+        file.write(f"ID={str(next(uniqueid))}\n")
+        file.write(f"rounds={aResult.rounds}\n")
+        file.write(f"size={aResult.size}\n")
+        file.write(f"time={aResult.thisTime}\n")
+        file.write(f"format={aResult.format}\n")
+        file.write(f"alg={aResult.algorithm}\n")
+        file.write(f"numberOfPictures={aResult.numberOfPictures}\n")
+
+def runARound(size,format,algorithm,auto_loop = 3):
+    command = f"python3 src/main.py -f {format} -s {size} -d 10 -l 0 -a {algorithm} -bench true"
+    aTimer = timeit.Timer(lambda: runCommand(command))
+    thisTime = aTimer.timeit(auto_loop)
+    numberOfPictures = readNumberOfPictures()
+    myResult = result(format,size,algorithm,thisTime,numberOfPictures,auto_loop)
+    return myResult
 
 def main():
+    global BENCHMARK_RESULTS_FILE
     if len(sys.argv) < 2:
         print(f"No valid arguments found")
         sys.exit(0)
@@ -152,16 +165,17 @@ def main():
     append = False
     max_len = 50
     min_len = 10
+    size = 0
     print_time = True
     standard_benchmark = False
     format = "GIF"
     algorithm = "insertion"
     for inst,value in instructions:
         # Check for -a arg
-        if (inst == "-a" or inst == "-append_to_log") and (value == "true" or value == "false"):
+        if (inst == "-atl" or inst == "-append_to_log") and (value == "true" or value == "false"):
             append = True
-        elif (inst == "-a" or inst == "-append_to_log"):
-            print(f"Incorrect args, -a value {value} is not an int between 1 and 999")
+        elif (inst == "-atl" or inst == "-append_to_log"):
+            print(f"Incorrect args, -atl value {value} is not an int between 1 and 999")
             sys.exit(0)
         # Check for standard arg
         if (inst == "-standard") and (value == "true"):
@@ -169,7 +183,6 @@ def main():
         elif (inst == "-standard"):
             print(f"Incorrect args, -s value {value} is not true or false")
             sys.exit(0)
-        # Check for -time arg
         if (inst == "-t" or inst == "-time") and (value == "true" or value == "false"):
             print_time = True
         elif (inst == "-t" or inst == "-time"):
@@ -182,8 +195,8 @@ def main():
             sys.exit(0)
         if (inst == "-alg" or inst == "-algorithm") and (value in list(algorithmsDict.keys())):
             algorithm = value
-        elif (inst == "-f" or inst == "-format"):
-            print(f"Incorrect args, -f value {value} is not GIF or MP4")
+        elif (inst == "-alg" or inst == "-algorithm"):
+            print(f"Incorrect args, -algorithm value {value} is not in list of alg")
             sys.exit(0)
         isInt, newValue = validateInput("int", value)
         if isInt:
@@ -197,10 +210,15 @@ def main():
             elif (inst == "-max"):
                 print(f"Incorrect args, -max value {value} is not an int between 100 and 1000")
                 sys.exit(0)
-            if (inst == "-min") and   1 < newValue < 1000:
+            if (inst == "-min") and 1 < newValue < 1000:
                 min_len = newValue
             elif (inst == "-min"):
                 print(f"Incorrect args, -min value {value} is not an int between 1 and 1000")
+                sys.exit(0)
+            if (inst == "-s" or inst == "-size") and 5 < newValue < 1000:
+                size = newValue
+            elif (inst == "-s" or inst == "-size"):
+                print(f"Incorrect args, -s value {value} is not an int between 1 and 1000")
                 sys.exit(0)
     if max_len < min_len:
         print(f"Incorrect args, min value {min_len} is not smaller than max value {max_len}")
@@ -210,49 +228,39 @@ def main():
     # Change to standard_benchmark
     if standard_benchmark:
         print(f"Standard benchmark is true, therefore most other settings are ignored")
-        #Change to if append
-        if append:
-            print("Appending results to benchmark results")
-            # # are ignored
-            # each entry begins with 20x -----
-            # each entry then has a date=
-            # each entry then has it's unique id
-            # each entry then has:
-            #   rounds=int
-            #   min_len=int
-            #   max_len=int
-            #   avg_time=timeSum/len(timeLog)
-            #   avg_time_size=timeSizeSum/len(timeLog)
-            #   total_size_sum=timeSizeSum
-            file = os.open("benchmark_results.txt","a")
-            file.write("--------------------")
-            file.write(f"date={datetime.datetime.now()}")
-            file.write(f"ID={str(uniqueid())}")
-            file.write(f"rounds={rounds}")
-            file.write(f"min_len={min_len}")
-            file.write(f"max_len={max_len}")
-            file.write(f"avg_time={timeSum/len(timeLog)}")
-            file.write(f"avg_time_size={timeSizeSum/len(timeLog)}")
-            file.write(f"total_size_sum={timeSizeSum}")
-            file.close()
+        # what is standard benchmark:
+        # For multiple alg and size, log number of pic & times in both MP4 and GIF
+        # What alg: quick, insertion, merge, shell
+        # What sizes: 10,20,50
+        # What formats: MP4 and GIF
+        resultCounter = 0
+        for format in ["GIF","MP4"]:
+            for alg in  ["quick","insertion","shell"]:
+                for size in [10, 20, 50]:
+                    aResult = runARound(size, format, alg, 1)
+                    printIF(f"Format={format} | Alg={alg} | Size={size} | Total number of pics={aResult.numberOfPictures} | Total time={aResult.thisTime} | Avg pic/time={aResult.numberOfPictures/aResult.thisTime}",True)
+                    if append:
+                        appendResult(aResult)
+                        resultCounter +=1
+                printIF(("------------------------------------------------------------------------------------------------"), True)
+            printIF(("################################################################################################################"), True)
+        if resultCounter > 0:
+            print(f"Appended {resultCounter} results to {BENCHMARK_RESULTS_FILE}")
     else:
-        timeLog = runABatch(rounds, min_len, max_len, format, algorithm, print_time)
-        pictures = []
-        times = []
-        sizes = []
-        for result in timeLog:
-            pictures.append(result.myNumberOfPictures)
-            times.append(result.myTime)
-            sizes.append(result.mySize)
+        if size == 0:
+            size = random.randint(min_len,max_len)
+        aResult = runARound(size, format, algorithm, rounds)
+        if append and rounds == 1:
+            appendResult(aResult)
+            print(f"Appended results to {BENCHMARK_RESULTS_FILE}")
         printIF(f"------Timing results------", print_time)
         printIF(f"Rounds:{rounds}",print_time)
-        printIF(f"Min length of array to be sorted:{min_len}",print_time)
-        printIF(f"Max length of array to be sorted:{max_len}",print_time)
-        printIF(f"Total length of all arrays sorted:{sum(sizes)}",print_time)
-        printIF(f"Total number of pictures created:{sum(pictures)}", print_time)
-        printIF(f"Avg time:{sum(times)/len(timeLog)}",print_time)
-        printIF(f"Avg time/size:{(sum(times)/len(timeLog))/sum(sizes)}",print_time)
-        printIF(f"Avg time per picture:{sum(pictures)/sum(times)}",print_time)
+        printIF(f"Array size:{size}",print_time)
+        printIF(f"Total length of all arrays sorted:{size*rounds}",print_time)
+        printIF(f"Total number of pictures created:{aResult.numberOfPictures*rounds}", print_time)
+        printIF(f"Avg time:{aResult.thisTime}",print_time)
+        printIF(f"Avg time/size:{(aResult.thisTime/rounds)/aResult.numberOfPictures}",print_time)
+        printIF(f"Avg pic per time:{aResult.numberOfPictures/aResult.thisTime}",print_time)
 
 def validateInput(type,input):
     if type == "int":
@@ -267,8 +275,8 @@ def validateInput(type,input):
 
 if __name__ == '__main__':
     available_args = ["-r","-rounds","-max","-min","-time","-t", \
-                      "-append_to_log","-a_t_l","-standard","-f","-format", \
-                      "-algorithm","-alg"]
+                      "-append_to_log","-atl","-standard","-f","-format", \
+                      "-algorithm","-alg","-s","-size"]
     if len(sys.argv) > 1:
         if len(sys.argv) == 2 and sys.argv[1] == "help":
             print("--------------------------------------------------------------")
@@ -277,5 +285,15 @@ if __name__ == '__main__':
             print(f"https://github.com/thestar19/Sorting-Algorithm-GIF-Generator")
             print(f"A fork of Sorting Algorithm Visualizer by LucasPilla")
             print(f"Available arguments:{available_args}")
+            print(f"------------------------")
+            print(f"Valid inputs for each argument:")
+            print(f"Number of rounds to run: -r or -rounds => 0 < int < 1000")
+            print(f"Size of length of array: -s or -size => 0 < int < 1000")
+            print(f"Append results to log, only works for -r 1: -atl or -append_to_log => true/false")
+            print(f"Run standard benchmark, ignores other options: -standard => true/false")
+            print(f"What sorting algorithm: -alg or -algorithm => {list(algorithmsDict.keys())}")
+            print(f"Format for testing: -f or -format => GIF or MP4")
+            print(f"For random size, specify max & min:")
+            print(f"        Max/min value for random length of array: -max or -min => min < max < 1000")
             print("--------------------------------------------------------------")
     main()
