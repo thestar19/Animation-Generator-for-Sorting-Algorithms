@@ -8,9 +8,9 @@ Program made with Python and Pygame module for generating GIFs of sorting algori
 Support this project by leaving a :star:
 
 ## Program preview
-<img src="sorting_thumbnail.gif" alt="Program preview" width="450" height=400>
+<img src="res/sorting_thumbnail.gif" alt="Program preview" width="450" height=400>
 
-<img src="terminal_view.png" alt="Terminal preview" width="520" height=225>
+<img src="res/terminal_view.png" alt="Terminal preview" width="520" height=225>
 
 ## Contribute
 Contributions are welcome. This project is still very new so much work is needed.
@@ -31,6 +31,16 @@ To generate an animation without interacting with the program's graphical interf
   
 This will create a GIF in the main folder of Quicksort sorting an array of 50 elements with a delay for each pic of 50ms and infinite looping.\
 To see all options, run `python3 src/main.py help`
+### Benchmark
+To better optimize the program & to enable features such as "estimated time for creation", a benchmark exists.
+You can contribute too:
+- Install the program so that `python3 src/main.py` runs correctly
+- Run `python3 src/benchmark.py -standard true -atl true`. This may take a while (10min is common on modern computers) \
+    The results will be appended to benchmark_results.txt, which contains results from other systems.
+- Upload your results to [benchmark_results.txt](benchmark_results.txt) in the repo, either by manually copying and pasting the results into the file on the repo or by simply uploading the complete file.
+
+
+To see all options for the benchmark, run `python3 src/benchmark.py help`
 
 ## Common troubleshooting steps:
 ### Install pip
