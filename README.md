@@ -8,9 +8,9 @@ Program made with Python and Pygame module for generating GIFs of sorting algori
 Support this project by leaving a :star:
 
 ## Program preview
-<img src="sorting_thumbnail.gif" alt="Program preview" width="450" height=400>
+<img src="res/sorting_thumbnail.gif" alt="Program preview" width="450" height=400>
 
-<img src="terminal_view.png" alt="Terminal preview" width="520" height=225>
+<img src="res/terminal_view.png" alt="Terminal preview" width="520" height=225>
 
 ## Contribute
 Contributions are welcome. This project is still very new so much work is needed.
