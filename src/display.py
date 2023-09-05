@@ -8,7 +8,7 @@ pygame.init()
 
 #This will be set later
 #pygame.display.set_caption('Sorting Algorithm Animation Generator')
-pygame.display.set_caption('Sorting Algorithm GIF Generator')
+pygame.display.set_caption('Animation Generator for Sorting Algorithms')
 
 windowSize = (900, 800)
 screen = pygame.display.set_mode(windowSize)
@@ -83,7 +83,7 @@ class BoxWithText(Box):
                     if self.name == delayX10Box.name:
                         someFactor = 10
                         delayBox.update(None)
-                    if self.name == includeSettingsInGifBox.name: includeSettingsInOutput = True
+                    if self.name == includeSettingsInOutputBox.name: includeSettingsInOutput = True
                     if self.name == showValueInBarsBox.name: displayValuesInOutput = True
 
                 else:
@@ -91,7 +91,7 @@ class BoxWithText(Box):
                     if self.name == delayX10Box.name:
                         someFactor = 1
                         delayBox.update(None)
-                    if self.name == includeSettingsInGifBox.name: includeSettingsInOutput = False
+                    if self.name == includeSettingsInOutputBox.name: includeSettingsInOutput = False
                     if self.name == showValueInBarsBox.name: displayValuesInOutput = False
 
 
@@ -365,14 +365,14 @@ stopButton = ButtonBox('res/stopButton.png', (800, 440, 50, 50))
 advancedText = justText("--------------------------------Advanced options--------------------------------", grey,
                         (400, 560, 100, 50))
 delayX10Box = BoxWithText("Increase delay", (60, 620, 60, 50), "x10", "x1")
-includeSettingsInGifBox = BoxWithText("Include settings in GIF", (250, 620, 95, 50), "Include", "Exclude")
-showValueInBarsBox = BoxWithText("Display values in bar", (510, 620, 95, 50), "Include", "Exclude")
+includeSettingsInOutputBox = BoxWithText("Include settings in Animation", (250, 620, 95, 50), "Include", "Exclude")
+showValueInBarsBox = BoxWithText("Output values in bars", (510, 620, 95, 50), "Include", "Exclude")
 outputFormatBox = DropdownBox('Output Format', (60, 720, 220, 50), baseFont,grey,None)
 
 
 #Add ref to all elements in list.
-ListOfAllBoxes.extend([sizeBox,loopBox,delayBox,algorithmBox,playButton,stopButton,advancedText, \
-                      delayX10Box,includeSettingsInGifBox,showValueInBarsBox,outputFormatBox])
+ListOfAllBoxes.extend([sizeBox, loopBox, delayBox, algorithmBox, playButton, stopButton, advancedText, \
+                       delayX10Box, includeSettingsInOutputBox, showValueInBarsBox, outputFormatBox])
 def updateWidgets(event):
     global ListOfAllBoxes
     # Instead of looping
