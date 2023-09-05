@@ -47,8 +47,8 @@ BENCHMARK_TEXT_FILE = "temp_file_for_benchmark.txt"
 # 3 = Warning message
 # 4 = Reserved for debug use
 
-#Generating gifs requires placing files in subfolder and then loading them.
-#This deletes everything except gif
+#Generating animations as output requires placing files in subfolder and then loading them.
+#This deletes all temporary files created during the generation of output
 def deleteTempFiles():
     try:
         myFiles = []
@@ -63,7 +63,7 @@ def deleteTempFiles():
     except:
         raise EIO("Could not delete files in subfolder!")
 
-# For some uses, having an existing sorting.gif file is a problem
+# For some uses, if the output file already exists it may cause problems.
 # Therefore, this function deletes that file using os lib
 def deleteExistingFile(name):
     if path.exists(name):
@@ -104,15 +104,20 @@ def printProgressBar(currentValue):
 
 def printSign():
     print("""
- _______         _______         _______ 
-(  ____ \       (  ___  )       (  ____ |
-| (    \/       | (   ) |       | (    \/
-| (_____  _____ | (___) | _____ | |      
-(_____  )(_____)|  ___  |(_____)| | ____ 
-      ) |       | (   ) |       | | \_  )
-/\____) |       | )   ( |       | (___) |
-\_______)       |/     \|       (_______)
-                                         """)
+                   _                    _    _               
+     /\           (_)                  | |  (_)              
+    /  \    _ __   _  _ __ ___    __ _ | |_  _   ___   _ __  
+   / /\ \  | '_ \ | || '_ ` _ \  / _` || __|| | / _ \ | '_ \ 
+  / ____ \ | | | || || | | | | || (_| || |_ | || (_) || | | |
+ /_/    \_\|_| |_||_||_| |_| |_| \__,_| \__||_| \___/ |_| |_|
+   _____                                 _                   
+  / ____|                               | |                  
+ | |  __   ___  _ __    ___  _ __  __ _ | |_  ___   _ __     
+ | | |_ | / _ \| '_ \  / _ \| '__|/ _` || __|/ _ \ | '__|    
+ | |__| ||  __/| | | ||  __/| |  | (_| || |_| (_) || |       
+  \_____| \___||_| |_| \___||_|   \__,_| \__|\___/ |_|       
+                                                             
+                                                             """)
 
 def printLimitations(myType):
     printL(myType,"Limitations exceeded. For reference see below")
@@ -210,7 +215,7 @@ def createGIF(counter,SCREENSHOT_FILENAME,delay,loops,terminal=False):
     #This will start to load in individual pictures into gif engine
     deleteExistingFile("sorting.gif")
     printL(1, f"Adding {str(delay)} ms delay for each image in GIF")
-    printL(4, "Accurate gif settings is applied \n Therefore every frame from animation will be in GIF.")
+    printL(4, "Accurate GIF settings is applied \n Therefore every frame from animation will be in GIF.")
     printL(4, "This increases time to generate, but also more accurately displays how sorting function works.")
     printL(4, f"Total number of recorded images: {str(len(fileNames))}")
     updateDisplay(terminal)
@@ -244,7 +249,6 @@ def createMP4(numberOfPictures,SCREENSHOT_FILENAME,delay,terminal=False):
     fileNames = []
     for i in range(0,numberOfPictures):
         fileNames.append(f"{SCREENSHOT_FILENAME}{str(i)}.jpg")
-    #This will start to load in individual pictures into gif engine
     deleteExistingFile("sorting.mp4")
     printL(1, f"Adding {str(delay)} ms delay for each image in MP4")
     printL(4, "Accurate MP4 settings is applied \n Therefore every frame from animation will be in MP4.")
@@ -288,11 +292,11 @@ def getMaxNumber(files):
     return currentMax
 
 #Given a picture counter & screenshot item, takes and saves a picture of animation
-def takePicture(SCREENSHOT_FILENAME,GIF_picture_counter,screenshot):
+def takePicture(SCREENSHOT_FILENAME,counter_for_number_pictures_created,screenshot):
     if not display.includeSettingsInOutput:
-        pygame.image.save(screenshot, f"{SCREENSHOT_FILENAME}{str(GIF_picture_counter)}.jpg")
+        pygame.image.save(screenshot, f"{SCREENSHOT_FILENAME}{str(counter_for_number_pictures_created)}.jpg")
     else:
-        pygame.image.save(display.screen, f"{SCREENSHOT_FILENAME}{str(GIF_picture_counter)}.jpg")
+        pygame.image.save(display.screen, f"{SCREENSHOT_FILENAME}{str(counter_for_number_pictures_created)}.jpg")
 
 # We need a place to write pictures currently
 # Yes, this is bad design.
@@ -316,51 +320,52 @@ def listAsStringGood(myList):
     return valid_formats
 
 
-def createPicturesForOutput(TERMINAL_MODE,GIF_picture_counter,GIF_skip_image_counter,numbers,alg_iterator,GIF_WINDOW_SIZE):
+def createPicturesForOutput(TERMINAL_MODE,counter_for_number_pictures_created,counter_skipping_images_during_creation,numbers,alg_iterator,OUTPUT_WINDOW_SIZE):
     global SCREENSHOT_FILENAME
     try:
         while True:
-            if len(numbers) < 50 or GIF_picture_counter % 1000 == 5:
+            if len(numbers) < 50 or counter_for_number_pictures_created % 1000 == 5:
                 updateDisplay(TERMINAL_MODE)
-                printL(4,f"Current pic count:{GIF_picture_counter}")
+                printL(4,f"Current pic count:{counter_for_number_pictures_created}")
             numbers, redBar1, redBar2, blueBar1, blueBar2 = next(alg_iterator)
             display.drawInterface(numbers, redBar1, redBar2, blueBar1, blueBar2)
-            screenshot = pygame.Surface(GIF_WINDOW_SIZE)
+            screenshot = pygame.Surface(OUTPUT_WINDOW_SIZE)
             screenshot.blit(display.screen, (0, 0))
             # Pictures needs to be generated and saved temporarily
             if len(numbers) <= 200:
-                takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, screenshot)
-                GIF_picture_counter += 1
+                takePicture(SCREENSHOT_FILENAME, counter_for_number_pictures_created, screenshot)
+                counter_for_number_pictures_created += 1
             # If size > 200, then we need to take drastically less pictures
             else:
-                if int(GIF_skip_image_counter) % int(5) == 1:
-                    takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, screenshot)
-                    GIF_picture_counter += 1
-                    GIF_skip_image_counter = 0
-                GIF_skip_image_counter += 1
+                if int(counter_skipping_images_during_creation) % int(5) == 1:
+                    takePicture(SCREENSHOT_FILENAME, counter_for_number_pictures_created, screenshot)
+                    counter_for_number_pictures_created += 1
+                    counter_skipping_images_during_creation = 0
+                counter_skipping_images_during_creation += 1
 
     except StopIteration:
-        # If program stops because end of sorting, gif needs to be created if selected
+        # If program stops because end of sorting
         # Create green bars
+        printL(4, f"Current pic count:{counter_for_number_pictures_created}")
         a_set = set(range(display.numBars))
         display.drawInterface(numbers, -1, -1, -1, -1, greenRows=a_set)
-        # Make sure they are saved for a second
-        takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, screenshot)
-        GIF_picture_counter += 1
-        takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, screenshot)
-        GIF_picture_counter += 1
-        takePicture(SCREENSHOT_FILENAME, GIF_picture_counter, screenshot)
-        GIF_picture_counter += 1
-        # Call function for GIF
+        # Make sure final frame are saved for slightly longer than the rest
+        takePicture(SCREENSHOT_FILENAME, counter_for_number_pictures_created, screenshot)
+        counter_for_number_pictures_created += 1
+        takePicture(SCREENSHOT_FILENAME, counter_for_number_pictures_created, screenshot)
+        counter_for_number_pictures_created += 1
+        takePicture(SCREENSHOT_FILENAME, counter_for_number_pictures_created, screenshot)
+        counter_for_number_pictures_created += 1
+        printL(4, f"Current pic count:{counter_for_number_pictures_created}")
         if not TERMINAL_MODE:
             if display.outputFormatBox.get_active_option() == "GIF":
-                createGIF(GIF_picture_counter, SCREENSHOT_FILENAME, int(display.delay), int(display.loopBox.get_value()))
+                createGIF(counter_for_number_pictures_created, SCREENSHOT_FILENAME, int(display.delay), int(display.loopBox.get_value()))
             else:
-                createMP4(GIF_picture_counter, SCREENSHOT_FILENAME, int(display.delay))
+                createMP4(counter_for_number_pictures_created, SCREENSHOT_FILENAME, int(display.delay))
         # Turn off sorting
         display.do_sorting = False
         if TERMINAL_MODE:
-            return (GIF_picture_counter,GIF_skip_image_counter)
+            return (counter_for_number_pictures_created,counter_skipping_images_during_creation)
 
 
 def main():
@@ -379,11 +384,11 @@ def main():
     alg_iterator = None
     
     #One keeps track of how many files have been created, the other when to skip images
-    GIF_picture_counter = 0
-    GIF_skip_image_counter = 0
+    counter_for_number_pictures_created = 0
+    counter_skipping_images_during_creation = 0
 
     #Used for rendering window
-    GIF_WINDOW_SIZE = (900, 400)
+    OUTPUT_WINDOW_SIZE = (900, 400)
     
     #Just to make sure nothing from prev runs is left
     deleteTempFiles()
@@ -416,8 +421,8 @@ def main():
                 else:
                     printL(1,"-------------------------------")
                     printL(1,("Creating animation"))
-                    GIF_picture_counter = 0
-                    GIF_picture_counter = 0
+                    counter_for_number_pictures_created = 0
+                    counter_skipping_images_during_creation = 0
                     display.do_sorting = True
                     display.playButton.isActive = False
                     current_alg = display.algorithmBox.get_active_option()
@@ -440,21 +445,17 @@ def main():
                     numbers, redBar1, redBar2, blueBar1, blueBar2 = next(alg_iterator)
             except StopIteration:
                 pass
-            #Delete temp files. No gif is possible because early stop
+            #Delete temp files.
             deleteTempFiles()
-            GIF_picture_counter = 0
-            GIF_skip_image_counter = 0
-                
-        #GIF may need own thing
-        #screenshot = pygame.Surface(GIF_WINDOW_SIZE)
-        #screenshot.blit(display.screen, (0,0))
+            counter_for_number_pictures_created = 0
+            counter_skipping_images_during_creation = 0
         
         if display.do_sorting and not display.paused: # sorting animation
             #This is needed bc both terminal mode and GUI mode needs to exist
-            createPicturesForOutput(False, GIF_picture_counter,GIF_skip_image_counter,numbers,alg_iterator,GIF_WINDOW_SIZE)
+            createPicturesForOutput(False, counter_for_number_pictures_created,counter_skipping_images_during_creation,numbers,alg_iterator,OUTPUT_WINDOW_SIZE)
             display.do_sorting = False
-            GIF_picture_counter = 0
-            GIF_skip_image_counter = 0
+            counter_for_number_pictures_created = 0
+            counter_skipping_images_during_creation = 0
         elif display.do_sorting and display.paused: # animation paused
             display.drawInterface(numbers, -1, -1, -1, -1)
         else: # no animation
@@ -477,15 +478,14 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         if sys.argv[1] == "help" or sys.argv[1] == "HELP" or sys.argv[1] == "Help":
             print("--------------------------------------------------------------")
-            print(f"Sorting Algorithm GIF Generator by TheStar19")
-            print(f"https://github.com/thestar19/Sorting-Algorithm-GIF-Generator")
+            print(f"Animation Generator for Sorting Algorithms")
+            print(f"https://github.com/thestar19/Animation-Generator-for-Sorting-Algorithms")
             print(f"A fork of Sorting Algorithm Visualizer by LucasPilla")
             print(f"A GIF or video can be created either by:")
             print(f"    1) Interacting with the GUI by running python3 src/main.py")
             print(f"    2) Only using the terminal by providing arguments")
-            print(f"Available sorting algorithms:{list(algorithmsDict.keys())}")
-            print(f"Available args:{available_args}")
-            print(f"Valid inputs:")
+            print(f"")
+            print(f"Valid inputs for terminal arguments:")
             print(f"    Format: -f => GIF or MP4")
             print(f"    Delay for each pic: -d => 1-3000")
             print(f"    Size of array to sort: -s => 5-1000")
@@ -493,6 +493,9 @@ if __name__ == '__main__':
             print(f"    Number of loops (GIF ONLY): -l => 0(inf)-9999")
             print(f"    Output debug info (verbose): -v => true/false")
             print(f"    Reserved use for benchmark: -bench => true/false")
+            print(f"")
+            print(f"Available sorting algorithms:{list(algorithmsDict.keys())}")
+            print(f"Available args:{available_args}")
             print("--------------------------------------------------------------")
             sys.exit(0)
         if sys.argv[1] == "-v" or sys.argv[1] == "-V":
@@ -602,17 +605,17 @@ if __name__ == '__main__':
         display.algorithmBox.add_options(list(algorithmsDict.keys()))
         display.outputFormatBox.add_options(CURRENT_OUTPUT_FORMATS)
         display.numBars = output_size
-        GIF_picture_counter,_ = createPicturesForOutput(True,0,0,numbers,alg_iterator,(900, 400))
+        counter_for_number_pictures_created,_ = createPicturesForOutput(True,0,0,numbers,alg_iterator,(900, 400))
         if output_format == "GIF":
-            createGIF(GIF_picture_counter,SCREENSHOT_FILENAME,output_delay,output_loops,True)
+            createGIF(counter_for_number_pictures_created,SCREENSHOT_FILENAME,output_delay,output_loops,True)
         else:
-            createMP4(GIF_picture_counter,SCREENSHOT_FILENAME,output_delay,True)
+            createMP4(counter_for_number_pictures_created,SCREENSHOT_FILENAME,output_delay,True)
         if benchmark:
             deleteExistingFile(BENCHMARK_TEXT_FILE)
             f = open(BENCHMARK_TEXT_FILE,"w")
-            f.write(f"pictures={GIF_picture_counter}")
+            f.write(f"pictures={counter_for_number_pictures_created}")
             f.close()
-        print("GIF creation finished!")
+        print("Output generation finished!")
         sys.exit()
         #all_args = sys.argv.split[]
     # Yes, this is a really wierd place to import stuff

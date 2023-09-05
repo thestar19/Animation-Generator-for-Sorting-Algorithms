@@ -172,10 +172,10 @@ def main():
     algorithm = "insertion"
     for inst,value in instructions:
         # Check for -a arg
-        if (inst == "-atl" or inst == "-append_to_log") and (value == "true" or value == "false"):
+        if (inst == "-atl" or inst == "-append_to_log") and (value == "true"):
             append = True
-        elif (inst == "-atl" or inst == "-append_to_log"):
-            print(f"Incorrect args, -atl value {value} is not an int between 1 and 999")
+        elif (inst == "-atl" or inst == "-append_to_log") and value != "false":
+            print(f"Incorrect args, -atl value {value} is not true or false")
             sys.exit(0)
         # Check for standard arg
         if (inst == "-standard") and (value == "true"):
@@ -183,7 +183,7 @@ def main():
         elif (inst == "-standard"):
             print(f"Incorrect args, -s value {value} is not true or false")
             sys.exit(0)
-        if (inst == "-t" or inst == "-time") and (value == "true" or value == "false"):
+        if (inst == "-t" or inst == "-time") and (value == "true"):
             print_time = True
         elif (inst == "-t" or inst == "-time"):
             print(f"Incorrect args, -t value {value} is not true or false")
@@ -281,8 +281,8 @@ if __name__ == '__main__':
         if len(sys.argv) == 2 and sys.argv[1] == "help":
             print("--------------------------------------------------------------")
             print(f"Benchmarking program for")
-            print(f"Sorting Algorithm GIF Generator by TheStar19")
-            print(f"https://github.com/thestar19/Sorting-Algorithm-GIF-Generator")
+            print(f"Animation Generator for Sorting Algorithms")
+            print(f"https://github.com/thestar19/Animation-Generator-for-Sorting-Algorithms")
             print(f"A fork of Sorting Algorithm Visualizer by LucasPilla")
             print(f"Available arguments:{available_args}")
             print(f"------------------------")
