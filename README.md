@@ -1,10 +1,12 @@
-# Sorting-Algorithms-GIF-Generator
+# Animation-Generator-for-Sorting-Algorithms
+Program made with Python and Pygame module for generating animations of how sorting algorithms function.
+Supports over 26 different algorithms eg: Bubblesort, Quicksort, Selectionsort, Mergesort, Radixsort.
 
-Originally created by LucasPilla, this is a fork of his project "Sorting Algorithms Visualizer" that instead generates GIF files of sorting animations written entirely in python3. Additional options are implemented to create better GIFs.
+Originally created by LucasPilla, this is a fork of his project "Sorting Algorithms Visualizer" that instead generates files of sorting animations. Additional options are implemented to create better videos or GIFs.
 
 Original project: https://github.com/LucasPilla/Sorting-Algorithms-Visualizer
 
-Program made with Python and Pygame module for generating GIFs of sorting algorithms \
+ \
 Support this project by leaving a :star:
 
 ## Program preview
@@ -17,9 +19,9 @@ Contributions are welcome. This project is still very new so much work is needed
 :exclamation: Feel free to open an issue if you have some problem :exclamation:
 
 ## Using the application
-Right now only tested in Ubuntu x64 22.04.1-desktop
+Warning: Only tested in Ubuntu x64 22.04.1-desktop
 ### Installation
-- Clone GitHub repository `git clone https://github.com/thestar19/Sorting-Algorithm-GIF-Generator.git`
+- Clone GitHub repository `git clone https://github.com/thestar19/Animation-Generator-for-Sorting-Algorithms.git`
 - Install requirements: `pip3 install -r requirements.txt`
 - Run: `python3 src/main.py`
 ### Verbose mode
@@ -29,7 +31,7 @@ Right now only tested in Ubuntu x64 22.04.1-desktop
 To generate an animation without interacting with the program's graphical interface:
 - Run eg `python3 src/main.py -f GIF -s 50 -d 50 -l 0 -a quick`
   
-This will create a GIF in the main folder of Quicksort sorting an array of 50 elements with a delay for each pic of 50ms and infinite looping.\
+This will create a GIF in the main folder depicting the algorithm Quicksort sorting an array of 50 elements with a delay for each pic of 50ms and infinite looping.\
 To see all options, run `python3 src/main.py help`
 ### Benchmark
 To better optimize the program & to enable features such as "estimated time for creation", a benchmark exists.
@@ -54,8 +56,10 @@ Check what version of python runs:\
   python3 -V\
   python3.7 -V
   
-Then, install imageio & pillow manually\
-  python3.7 -m pip install imageio\
-  python3.7 -m pip install --upgrade imageio\
-  python3.7 -m pip install pillow\
-  python3.7 -m pip install --upgrade pillow
+Then, install and upgrade imageio,pyav & pillow manually\
+  python3 -m pip install imageio\
+  python3 -m pip install --upgrade imageio\
+  python3 -m pip install pillow\
+  python3 -m pip install --upgrade pillow
+  python3 -m pip install imageio[pyav]\
+  python3 -m pip install --upgrade imageio[pyav]
