@@ -1,5 +1,5 @@
 # Animation-Generator-for-Sorting-Algorithms
-Program made with Python and Pygame module for generating animations of how sorting algorithms function.
+Program made with Python and Pygame module for generating animations of how sorting algorithms function.\
 Supports over 26 different algorithms eg: Bubblesort, Quicksort, Selectionsort, Mergesort, Radixsort.
 
 Originally created by LucasPilla, this is a fork of his project "Sorting Algorithms Visualizer" that instead generates files of sorting animations. Additional options are implemented to create better videos or GIFs.
@@ -60,6 +60,6 @@ Then, install and upgrade imageio,pyav & pillow manually\
   python3 -m pip install imageio\
   python3 -m pip install --upgrade imageio\
   python3 -m pip install pillow\
-  python3 -m pip install --upgrade pillow
+  python3 -m pip install --upgrade pillow\
   python3 -m pip install imageio[pyav]\
   python3 -m pip install --upgrade imageio[pyav]
