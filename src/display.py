@@ -10,7 +10,7 @@ pygame.init()
 #pygame.display.set_caption('Sorting Algorithm Animation Generator')
 pygame.display.set_caption('Animation Generator for Sorting Algorithms')
 
-windowSize = (900, 800)
+windowSize = (900, 1200)
 screen = pygame.display.set_mode(windowSize)
 
 # Font
@@ -41,6 +41,73 @@ class Box:
         self.clicked = pygame.mouse.get_pressed() != (0, 0, 0)
         self.isActive = True if self.rect.collidepoint(self.mousePos) else False
 
+
+class ColorPicker:
+    def __init__(self, rect, text, textRec,buddy,pos = 0):
+        self.rect = pygame.Rect(rect)
+        self.image = pygame.Surface((self.rect.w, self.rect.h))
+        self.image.fill(white)
+        self.text = text
+        self.buddy = buddy
+        self.textRec = pygame.Rect(textRec)
+        #self.color = pygame.Color(0,0,0)
+        self.rad = self.rect.h // 2
+        self.pwidth = self.rect.w - self.rad * 2
+        h = self.rect.h
+        self.pos = pos
+        self.h_1 = 0
+        self.s_1 = 0
+        self.p = 0
+
+    def get_color(self):
+        color = pygame.Color(0)
+        if self.pos == 0:
+            color.hsla = (int(self.p * self.pwidth*1.2), int((self.buddy.p*self.buddy.pwidth)/3), 50, 100)
+        if self.pos == 1:
+            color.hsla = (int(self.buddy.p * self.buddy.pwidth*1.2), int((self.p * self.pwidth)/3), 50, 100)
+        if self.pos == 2:
+            color.hsla = (int(self.h_1),int(self.s_1), 50, 100)
+        return color
+
+    def update(self,event):
+        moude_buttons = pygame.mouse.get_pressed()
+        mouse_pos = pygame.mouse.get_pos()
+        if moude_buttons[0] and self.rect.collidepoint(mouse_pos):
+            self.p = (mouse_pos[0] - self.rect.left - self.rad) / self.pwidth
+            self.p = (max(0, min(self.p, 1)))
+
+
+    def draw(self):
+        # Color selector
+        h = self.rect.h
+        if self.pos == 0:
+            for i in range(0,self.pwidth):
+                color = pygame.Color(0)
+                color.hsla = ((i*1.2), int((self.buddy.p*i)/3), 50, 100)
+                pygame.draw.rect(self.image, color, (i + self.rad, h // 3, 1, h - 2 * h // 3))
+        if self.pos == 1:
+            for i in range(0,self.pwidth):
+                color = pygame.Color(0)
+                color.hsla = (int(self.buddy.p * i * 1.2), i/3, 50, 100)
+                pygame.draw.rect(self.image, color, (i + self.rad, h // 3, 1, h - 2 * h // 3))
+        if self.pos == 2:
+            for i in range(0,self.pwidth*2):
+                if i % 2 == 1:
+                    print(f"h_1:{self.h_1}")
+                    self.h_1 += 1.2/2
+                else:
+                    print(f"s_1:{self.s_1}")
+                    self.s_1 += (1/3)/2
+                pygame.draw.rect(self.image, self.get_color(), (i + self.rad, h // 3, 1, h - 2 * h // 3))
+        self.s_1 = 0
+        self.h_1 = 0
+        screen.blit(self.image, self.rect)
+        center = self.rect.left + self.rad + self.p * self.pwidth, self.rect.centery
+        pygame.draw.circle(screen, self.get_color(), center, self.rect.height // 2.5)
+        # Draw txt left of selector
+        if self.text != "":
+            label = baseFont.render(self.text, True, grey)
+            screen.blit(label, (self.textRec.x + (self.textRec.w - label.get_width()) / 2, self.textRec.y - 32))
 
 class justText(Box):
     def __init__(self, text, color,rect):
@@ -368,11 +435,28 @@ delayX10Box = BoxWithText("Increase delay", (60, 620, 60, 50), "x10", "x1")
 includeSettingsInOutputBox = BoxWithText("Include settings in Animation", (250, 620, 95, 50), "Include", "Exclude")
 showValueInBarsBox = BoxWithText("Output values in bars", (510, 620, 95, 50), "Include", "Exclude")
 outputFormatBox = DropdownBox('Output Format', (60, 720, 220, 50), baseFont,grey,None)
+#Color picking
+P1_colorPickerBox = ColorPicker((260, 800+60*0, 600, 60),"Color pointer 1:",(60, 800+60*0+50, 200, 60),None,2)
+P1_satPickerBox = ColorPicker((570, 800+60*0, 300, 60),"",(0, 0, 0, 0),P1_colorPickerBox,1)
+P2_colorPickerBox = ColorPicker((260, 800+60*1, 300, 60),"Color pointer 2:",(60, 800+60*1+50, 200, 60),None)
+P2_satPickerBox = ColorPicker((570, 800+60*1, 300, 60),"",(0, 0, 0, 0),P2_colorPickerBox,1)
+P3_colorPickerBox = ColorPicker((260, 800+60*2, 300, 60),"Color pointer 3:",(60, 800+60*2+50, 200, 60),None)
+P3_satPickerBox = ColorPicker((570, 800+60*2, 300, 60),"",(0, 0, 0, 0),P3_colorPickerBox,1)
+back_colorPickerBox = ColorPicker((260, 800+60*3, 300, 60),"Background:",(60, 800+60*3+50, 200, 60),None)
+back_satPickerBox = ColorPicker((570, 800+60*3, 300, 60),"",(0, 0, 0, 0),back_colorPickerBox,1)
+bar_colorPickerBox = ColorPicker((260, 800+60*4, 300, 60),"Standard bar:",(60, 800+60*4+50, 200, 60),None)
+bar_satPickerBox = ColorPicker((570, 800+60*4, 300, 60),"",(0, 0, 0, 0),bar_colorPickerBox,1)
 
-
+P1_colorPickerBox.buddy = P1_satPickerBox
+P2_colorPickerBox.buddy = P2_satPickerBox
+P3_colorPickerBox.buddy = P3_satPickerBox
+back_colorPickerBox.buddy = back_satPickerBox
+bar_colorPickerBox.buddy = bar_satPickerBox
 #Add ref to all elements in list.
 ListOfAllBoxes.extend([sizeBox, loopBox, delayBox, algorithmBox, playButton, stopButton, advancedText, \
-                       delayX10Box, includeSettingsInOutputBox, showValueInBarsBox, outputFormatBox])
+                       delayX10Box, includeSettingsInOutputBox, showValueInBarsBox, outputFormatBox, \
+                       P1_colorPickerBox,P2_colorPickerBox,P3_colorPickerBox,back_colorPickerBox,bar_colorPickerBox \
+                       ,P2_satPickerBox,P3_satPickerBox,back_satPickerBox,bar_satPickerBox])
 def updateWidgets(event):
     global ListOfAllBoxes
     # Instead of looping
