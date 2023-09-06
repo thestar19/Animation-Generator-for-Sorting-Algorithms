@@ -93,14 +93,14 @@ def printProgress(progress):
 # in log values of type 2 exists and terminal is clear
 def printProgressBar(currentValue):
     print("Progress:" +  str(currentValue) + "%")
-    print("""[""",end="")
-    progressCounter = 0
-    for i in range(0,int(currentValue),5):
-        print("""#""",end="")
-        progressCounter +=1
-    for i in range(0,20-progressCounter):
-        print("""·""", end="")
-    print("""]""")
+    #print("""[""",end="")
+    #progressCounter = 0
+    #for i in range(0,int(currentValue),5):
+    #    print("""#""",end="")
+    #    progressCounter +=1
+    #for i in range(0,20-progressCounter):
+    #    print("""·""", end="")
+    #print("""]""")
 
 def printSign():
     print("""
@@ -178,7 +178,6 @@ def updateDisplay(terminal = False):
         return -1
     TEXTLOG_UPDATE = False
     #runTime = time.strftime("%H:%M:%S", time.localtime(time.time() - startUpTime - 60 * 60))
-    system("clear")
     printSign()
     #print(str(runTime))
     maxProgress = -1
