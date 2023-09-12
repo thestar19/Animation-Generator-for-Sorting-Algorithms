@@ -16,6 +16,7 @@ from gc import collect
 import imageio.v3 as iio
 #import av #Temporary, this should be changed to only import needed functions
 import pygame
+from dataclasses import dataclass
 
 
 #Global variables
@@ -397,11 +398,6 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-
-            elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and display.do_sorting:
-                display.paused = not display.paused
-                display.timer_space_bar = time()
-
             display.updateWidgets(event)
 
         if display.playButton.isActive: # play button clicked
@@ -435,7 +431,6 @@ def main():
             printL(1,("Stopping animation"))
             display.stopButton.isActive = False
             display.do_sorting = False
-            display.paused = False
             try: # deplete generator to display sorted numbers
                 while True:
                     numbers, redBar1, redBar2, blueBar1, blueBar2 = next(alg_iterator)
@@ -446,14 +441,12 @@ def main():
             counter_for_number_pictures_created = 0
             counter_skipping_images_during_creation = 0
         
-        if display.do_sorting and not display.paused: # sorting animation
+        if display.do_sorting: # sorting animation
             #This is needed bc both terminal mode and GUI mode needs to exist
             createPicturesForOutput(False, counter_for_number_pictures_created,counter_skipping_images_during_creation,numbers,alg_iterator,OUTPUT_WINDOW_SIZE)
             display.do_sorting = False
             counter_for_number_pictures_created = 0
             counter_skipping_images_during_creation = 0
-        elif display.do_sorting and display.paused: # animation paused
-            display.drawInterface(numbers, -1, -1, -1, -1)
         else: # no animation
             a_set = set(range(display.numBars))
             display.drawInterface(numbers, -1, -1, -1, -1, greenRows=a_set)
@@ -467,6 +460,95 @@ def validateInput(type,input):
         except ValueError:
             return (False, input)
     return (None,input)
+
+
+@dataclass
+class TerminalOptions:
+    output_format:str = "GIF"
+    output_delay:int = 1
+    output_size:int = 100
+    add_numbers_to_bars:bool = False
+    output_loops:int = 0
+    output_alg:str = "insertion"
+    benchmark:bool = False
+
+
+def analyzeInputsArgs(available_args):
+    global DEBUG
+    all_args = sys.argv.copy()
+    all_args.pop(0)
+    print("--------------------")
+    instructions = []
+    while True:
+        if len(all_args) > 1:
+            if all_args[0] in available_args:
+                instructions.append((all_args.pop(0), all_args.pop(0)))
+            else:
+                print(f"Incorrects arg options")
+                print(f"Available args:{available_args}")
+                sys.exit(0)
+        else:
+            break
+    options = TerminalOptions()
+    for inst, value in instructions:
+        # Check for output format
+        if inst == "-f" and value in CURRENT_OUTPUT_FORMATS:
+            options.output_format = value
+        elif inst == "-f":
+            print(f"Incorrect args, -f value {value} is not supported")
+            sys.exit(0)
+        # Check for debug mode, verbose
+        elif (inst == "-v" or inst == "-V") and value == "true":
+            DEBUG = True
+        elif inst == "-v" or inst == "-V":
+            print(f"Incorrect args, -v value {value} is not true or false")
+            sys.exit(0)
+        # Check for including numbers in bars or entire GUI
+        elif inst == "-include" and value == "numbers":
+            options.add_numbers_to_bars = True
+        elif inst == "-include":
+            print(f"Incorrect args, -include value {value} is not text \"numbers\"")
+            sys.exit(0)
+        # Check for which algorithm to run
+        elif inst == "-a" and value in list(algorithmsDict.keys()):
+            options.output_alg = value
+        elif inst == "-a":
+            print(f"Incorrect args, -a value {value} is not in accepted sorting alg")
+            sys.exit(0)
+        elif inst == "-bench" and value == "true":
+            options.benchmark = True
+        elif inst == "-bench":
+            print(f"Incorrect args, -bench value {value} is not true or false")
+            sys.exit(0)
+        isInt, newValue = validateInput("int", value)
+        if isInt and inst in "-d -s -l":
+            # Check for delay value
+            if inst == "-d" and 1 <= int(newValue) <= 3000:
+                options.output_delay = int(newValue)
+            elif inst == "-d":
+                print(f"Incorrect args, -d value {newValue} is not an int between 1 and 3000")
+                sys.exit(0)
+            # Check for size value
+            elif inst == "-s" and 5 < int(newValue) <= 1000:
+                options.output_size = int(newValue)
+            elif inst == "-s":
+                print(f"Incorrect args, -s value {newValue} is not an int between 5 and 1000")
+                sys.exit(0)
+            # Check for number of loops
+            elif inst == "-l" and 0 <= int(newValue) <= 9999:
+                options.output_loops = int(newValue)
+            elif inst == "-l":
+                print(f"Incorrect args, -l value {newValue} is not 0 <= value <= 9999")
+                sys.exit(0)
+    print(f"Creating output with these settings:")
+    print(f"    Output format={options.output_format}")
+    print(f"    Delay for each pic={options.output_delay}")
+    print(f"    Number of elements in list to sort={options.output_size}")
+    print(f"    Include numbers in bars={options.add_numbers_to_bars}")
+    print(f"    Sorting alg={options.output_alg}")
+    if options.output_format == "GIF":
+        print(f"    Number of loops={options.output_loops}")
+    return options
 
 
 if __name__ == '__main__':
@@ -501,87 +583,8 @@ if __name__ == '__main__':
     checkVersionOfPYAV()
     #Check for any args in program init
     if len(sys.argv) > 2:
-        all_args = sys.argv.copy()
-        all_args.pop(0)
-        print("--------------------")
-        instructions = []
-        while True:
-            if len(all_args) > 1:
-                if all_args[0] in available_args:
-                    instructions.append((all_args.pop(0),all_args.pop(0)))
-                else:
-                    print(f"Incorrects arg options")
-                    print(f"Available args:{available_args}")
-                    sys.exit(0)
-            else:
-                break
-        output_format = "GIF"
-        output_delay = 1
-        output_size = 100
-        add_numbers_to_bars = False
-        output_loops = 0
-        output_alg = "insertion"
-        benchmark = False
-        for inst,value in instructions:
-            #Check for output format
-            if inst == "-f" and value in CURRENT_OUTPUT_FORMATS:
-                output_format = value
-            elif inst == "-f" :
-                print(f"Incorrect args, -f value {value} is not supported")
-                sys.exit(0)
-            #Check for debug mode, verbose
-            elif (inst == "-v" or inst == "-V") and value == "true":
-                DEBUG = True
-            elif inst == "-v" or inst == "-V":
-                print(f"Incorrect args, -v value {value} is not true or false")
-                sys.exit(0)
-            #Check for including numbers in bars or entire GUI
-            elif inst == "-include" and value == "numbers":
-                add_numbers_to_bars = True
-            elif inst == "-include":
-                print(f"Incorrect args, -include value {value} is not text \"numbers\"")
-                sys.exit(0)
-            # Check for which algorithm to run
-            elif inst == "-a" and value in list(algorithmsDict.keys()):
-                output_alg = value
-            elif inst == "-a":
-                print(f"Incorrect args, -a value {value} is not in accepted sorting alg")
-                sys.exit(0)
-            elif inst == "-bench" and value == "true":
-                benchmark = True
-            elif inst == "-bench":
-                print(f"Incorrect args, -bench value {value} is not true or false")
-                sys.exit(0)
-            isInt,newValue = validateInput("int",value)
-            if isInt and inst in "-d -s -l":
-                #Check for delay value
-                if inst == "-d" and 1 <= int(newValue) <= 3000:
-                    output_delay = int(newValue)
-                elif inst == "-d" :
-                    print(f"Incorrect args, -d value {newValue} is not an int between 1 and 3000")
-                    sys.exit(0)
-                #Check for size value
-                elif inst == "-s" and 5 < int(newValue) <= 1000:
-                    output_size = int(newValue)
-                elif inst == "-s":
-                    print(f"Incorrect args, -s value {newValue} is not an int between 5 and 1000")
-                    sys.exit(0)
-                #Check for number of loops
-                elif inst == "-l" and 0 <= int(newValue) <= 9999:
-                    output_loops = int(newValue)
-                elif inst == "-l":
-                    print(f"Incorrect args, -l value {newValue} is not 0 <= value <= 9999")
-                    sys.exit(0)
-        print(f"Creating output with these settings:")
-        print(f"    Output format={output_format}")
-        print(f"    Delay for each pic={output_delay}")
-        print(f"    Number of elements in list to sort={output_size}")
-        print(f"    Include numbers in bars={add_numbers_to_bars}")
-        print(f"    Sorting alg={output_alg}")
-        if output_format == "GIF":
-            print(f"    Number of loops={output_loops}")
-
-
+        #Analyze inputs if in terminal mode, receive obj with data
+        shell_options = analyzeInputsArgs(available_args)
         # Just to make sure nothing from prev runs is left
         deleteTempFiles()
         # Create pictures if it does not exists
@@ -593,20 +596,20 @@ if __name__ == '__main__':
         putenv('SDL_VIDEODRIVER', 'fbcon')
         environ["SDL_VIDEODRIVER"] = "dummy"
         import display as display
-        numbers = [randint(10, 400) for i in range(output_size)]  # random list to be sorted
-        alg_iterator = algorithmsDict["insertion"](numbers, 0, output_size - 1)  # initialize iterator
+        numbers = [randint(10, 400) for i in range(shell_options.output_size)]  # random list to be sorted
+        alg_iterator = algorithmsDict[shell_options.output_alg](numbers, 0, shell_options.output_size - 1)  # initialize iterator
 
         #Okay so, for the display module to work this has to be set.
         # So honestly, instead of doing extra work this should be solved some other way.
         display.algorithmBox.add_options(list(algorithmsDict.keys()))
         display.outputFormatBox.add_options(CURRENT_OUTPUT_FORMATS)
-        display.numBars = output_size
+        display.numBars = shell_options.output_size
         counter_for_number_pictures_created,_ = createPicturesForOutput(True,0,0,numbers,alg_iterator,(900, 400))
-        if output_format == "GIF":
-            createGIF(counter_for_number_pictures_created,SCREENSHOT_FILENAME,output_delay,output_loops,True)
+        if shell_options.output_format == "GIF":
+            createGIF(counter_for_number_pictures_created,SCREENSHOT_FILENAME,shell_options.output_delay,shell_options.output_loops,True)
         else:
-            createMP4(counter_for_number_pictures_created,SCREENSHOT_FILENAME,output_delay,True)
-        if benchmark:
+            createMP4(counter_for_number_pictures_created,SCREENSHOT_FILENAME,shell_options.output_delay,True)
+        if shell_options.benchmark:
             deleteExistingFile(BENCHMARK_TEXT_FILE)
             f = open(BENCHMARK_TEXT_FILE,"w")
             f.write(f"pictures={counter_for_number_pictures_created}")
