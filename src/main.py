@@ -70,7 +70,9 @@ def deleteExistingFile(name):
         try:
             remove(name)
             printL(1, f"Removed {name}")
-        except:
+        except OSError as e: # name the Exception `e`
+            print "Failed with:", e.strerror # look what it says
+            print "Error code:", e.code
             printL(3,f"Could not remove {name}")
 
 #Call function with type according to above (eg 0 for normal log)
@@ -93,14 +95,14 @@ def printProgress(progress):
 # in log values of type 2 exists and terminal is clear
 def printProgressBar(currentValue):
     print("Progress:" +  str(currentValue) + "%")
-    print("""[""",end="")
-    progressCounter = 0
-    for i in range(0,int(currentValue),5):
-        print("""#""",end="")
-        progressCounter +=1
-    for i in range(0,20-progressCounter):
-        print("""·""", end="")
-    print("""]""")
+    #print("""[""",end="")
+    #progressCounter = 0
+    #for i in range(0,int(currentValue),5):
+    #    print("""#""",end="")
+    #    progressCounter +=1
+    #for i in range(0,20-progressCounter):
+    #    print("""·""", end="")
+    #print("""]""")
 
 def printSign():
     print("""
@@ -178,8 +180,6 @@ def updateDisplay(terminal = False):
         return -1
     TEXTLOG_UPDATE = False
     #runTime = time.strftime("%H:%M:%S", time.localtime(time.time() - startUpTime - 60 * 60))
-    system("clear")
-    printSign()
     #print(str(runTime))
     maxProgress = -1
     for type,value in TEXTLOG:
@@ -193,9 +193,10 @@ def updateDisplay(terminal = False):
         if type == 1:
             print(value)
         if type == 3:
-            print(f"{bcolors.WARNING} Warning: {value} {bcolors.ENDC}")
+            print(f"Warning: {value}")
         if type == 4 and DEBUG:
-            print(f"{bcolors.OKBLUE} Debug: {value} {bcolors.ENDC}")
+            print(f"Debug: {value}")
+    TEXTLOG.clear()
 
 def writeGifFile(listOfImages,numberOfLoops,delay):
     newGif = iio.imopen('sorting.gif', "w", plugin="pillow")
@@ -502,8 +503,8 @@ if __name__ == '__main__':
             printL(4,"Debug enabled")
             DEBUG = True
     #Check if correct software is installed
-    checkVersionOfPYAV()
     #Check for any args in program init
+    printSign()
     if len(sys.argv) > 2:
         all_args = sys.argv.copy()
         all_args.pop(0)
@@ -584,7 +585,6 @@ if __name__ == '__main__':
         print(f"    Sorting alg={output_alg}")
         if output_format == "GIF":
             print(f"    Number of loops={output_loops}")
-
 
         # Just to make sure nothing from prev runs is left
         deleteTempFiles()
