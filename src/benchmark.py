@@ -142,7 +142,7 @@ def runARound(size,format,algorithm,auto_loop = 3):
 
 def main():
     global BENCHMARK_RESULTS_FILE
-    if len(sys.argv) < 2:
+    if len(sys.argv) <= 2 and sys.argv[1] != "-standard":
         print(f"No valid arguments found")
         sys.exit(0)
     # ----------------------------------------------------------------------------------------------
@@ -199,7 +199,7 @@ def main():
             print(f"Incorrect args, -algorithm value {value} is not in list of alg")
             sys.exit(0)
         isInt, newValue = validateInput("int", value)
-        if isInt:
+        if isInt or inst in available_args:
             if (inst == "-r" or inst == "-rounds") and 0 < newValue < 1000:
                 rounds = newValue
             elif (inst == "-r" or inst == "-rounds"):
@@ -267,9 +267,9 @@ def validateInput(type,input):
         try:
             return (True,int(input))
         except TypeError:
-            return (False,input)
+            return (False,-1)
         except ValueError:
-            return (False, input)
+            return (False,-1)
     return (None,input)
 
 
@@ -296,4 +296,5 @@ if __name__ == '__main__':
             print(f"        Max/min value for random length of array: -max or -min => min < max < 1000")
             print(f"What sorting algorithm: -alg or -algorithm => {list(algorithmsDict.keys())}\n\n")
             print("--------------------------------------------------------------")
+            sys.exit(0)
     main()
