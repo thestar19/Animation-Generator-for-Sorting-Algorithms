@@ -1,0 +1,4 @@
+﻿pygame
+imageio
+pillow
+imageio[pyav]

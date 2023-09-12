@@ -1,0 +1,171 @@
+--------------------
+date=2023-09-04 16:59:59.644984
+ID=645023595916040920237593
+rounds=1
+size=10
+time=0.8518876939997426
+format=MP4
+alg=quick
+numberOfPictures=21
+--------------------
+date=2023-09-04 17:00:13.675318
+ID=675359130017040920231136
+rounds=1
+size=10
+time=2.1066912509995745
+format=GIF
+alg=quick
+numberOfPictures=27
+--------------------
+date=2023-09-04 17:00:19.739027
+ID=739062190017040920231136
+rounds=1
+size=20
+time=6.062667314999999
+format=GIF
+alg=quick
+numberOfPictures=101
+--------------------
+date=2023-09-04 17:01:00.408300
+ID=408338000117040920231136
+rounds=1
+size=50
+time=40.66804939800204
+format=GIF
+alg=quick
+numberOfPictures=690
+--------------------
+date=2023-09-04 17:01:02.687866
+ID=687904020117040920231136
+rounds=1
+size=10
+time=2.2783220679993974
+format=GIF
+alg=insertion
+numberOfPictures=30
+--------------------
+date=2023-09-04 17:01:08.066371
+ID=66408080117040920231136
+rounds=1
+size=20
+time=5.377281328001118
+format=GIF
+alg=insertion
+numberOfPictures=82
+--------------------
+date=2023-09-04 17:01:42.291898
+ID=291951420117040920231136
+rounds=1
+size=50
+time=34.22419014799743
+format=GIF
+alg=insertion
+numberOfPictures=596
+--------------------
+date=2023-09-04 17:01:44.396768
+ID=396819440117040920231136
+rounds=1
+size=10
+time=2.1033357310006977
+format=GIF
+alg=shell
+numberOfPictures=26
+--------------------
+date=2023-09-04 17:01:50.212045
+ID=212097500117040920231136
+rounds=1
+size=20
+time=5.813776977000089
+format=GIF
+alg=shell
+numberOfPictures=91
+--------------------
+date=2023-09-04 17:02:28.437216
+ID=437254280217040920231136
+rounds=1
+size=50
+time=38.22375314799865
+format=GIF
+alg=shell
+numberOfPictures=635
+--------------------
+date=2023-09-04 17:02:29.403051
+ID=403088290217040920231136
+rounds=1
+size=10
+time=0.9645691250007076
+format=MP4
+alg=quick
+numberOfPictures=30
+--------------------
+date=2023-09-04 17:02:30.918125
+ID=918164300217040920231136
+rounds=1
+size=20
+time=1.5138323840001249
+format=MP4
+alg=quick
+numberOfPictures=88
+--------------------
+date=2023-09-04 17:02:38.630243
+ID=630282380217040920231136
+rounds=1
+size=50
+time=7.710913171998982
+format=MP4
+alg=quick
+numberOfPictures=691
+--------------------
+date=2023-09-04 17:02:39.534584
+ID=534621390217040920231136
+rounds=1
+size=10
+time=0.9031128009992244
+format=MP4
+alg=insertion
+numberOfPictures=25
+--------------------
+date=2023-09-04 17:02:40.892247
+ID=892272400217040920231136
+rounds=1
+size=20
+time=1.3564003059982497
+format=MP4
+alg=insertion
+numberOfPictures=74
+--------------------
+date=2023-09-04 17:02:48.609146
+ID=609167480217040920231136
+rounds=1
+size=50
+time=7.716192791998765
+format=MP4
+alg=insertion
+numberOfPictures=680
+--------------------
+date=2023-09-04 17:02:49.422353
+ID=422391490217040920231136
+rounds=1
+size=10
+time=0.8121934939990751
+format=MP4
+alg=shell
+numberOfPictures=17
+--------------------
+date=2023-09-04 17:02:51.308297
+ID=308336510217040920231136
+rounds=1
+size=20
+time=1.8847530650018598
+format=MP4
+alg=shell
+numberOfPictures=123
+--------------------
+date=2023-09-04 17:02:58.814658
+ID=814695580217040920231136
+rounds=1
+size=50
+time=7.505172610002774
+format=MP4
+alg=shell
+numberOfPictures=670
