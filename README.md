@@ -21,7 +21,7 @@ Contributions are welcome. This project is still very new so much work is needed
 ## Using the application
 
 ### Installation Windows (10+) (beta)
-- Download [zip](https://github.com/thestar19/Animation-Generator-for-Sorting-Algorithms/raw/creating_windows_install/bin/Animation-Generator-for-Sorting-Algorithms_beta.zip) file from bin folder
+- Download [zip](https://github.com/thestar19/Animation-Generator-for-Sorting-Algorithms/raw/main/bin/Animation-Generator-for-Sorting-Algorithms_beta.zip) file from bin folder
 - Extract content
 - Run main.exe
   
