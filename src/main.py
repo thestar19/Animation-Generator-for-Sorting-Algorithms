@@ -8,18 +8,14 @@ def show_trace(event=""):
     print(event)
     sys.exit(0)
 
-#Carefully import stuff
-try:
-    from random import randint
-    from time import time
-    from algs import algorithmsDict
-    from os import rmdir, walk, getcwd, system, mkdir, remove,path,environ,putenv
-    from gc import collect
-    import imageio.v3 as iio
-    #import av #Temporary, this should be changed to only import needed functions
-    import pygame
-except ImportError:
-    show_trace()
+from random import randint
+from time import time
+from algs import algorithmsDict
+from os import rmdir, walk, getcwd, system, mkdir, remove,path,environ,putenv
+from gc import collect
+import imageio.v3 as iio
+#import av #Temporary, this should be changed to only import needed functions
+import pygame
 
 
 #Global variables
