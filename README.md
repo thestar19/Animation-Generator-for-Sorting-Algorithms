@@ -19,8 +19,18 @@ Contributions are welcome. This project is still very new so much work is needed
 :exclamation: Feel free to open an issue if you have some problem :exclamation:
 
 ## Using the application
-Warning: Only tested in Ubuntu x64 22.04.1-desktop
-### Installation
+
+### Installation Windows (10+) (beta)
+- Download [zip](https://github.com/thestar19/Animation-Generator-for-Sorting-Algorithms/raw/creating_windows_install/bin/Animation-Generator-for-Sorting-Algorithms_beta.zip) file from bin folder
+- Extract content
+- Run main.exe
+  
+Some features may not yet be implemented in the Windows version (eg terminal mode and benchmark), and not much testing has been done.
+Further, it is also possible to run the program in python3 in Windows without the zip file by modifying the code.
+
+
+### Installation Ubuntu
+Only tested in Ubuntu x64 22.04.1-desktop
 - Clone GitHub repository `git clone https://github.com/thestar19/Animation-Generator-for-Sorting-Algorithms.git`
 - Install requirements: `pip3 install -r requirements.txt`
 - Run: `python3 src/main.py`
