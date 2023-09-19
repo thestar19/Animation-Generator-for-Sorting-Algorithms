@@ -72,24 +72,29 @@ class Group:
         # Guard statement, if neither outline or title requested, then just return
         if self.title == "" and not self.outline:
             return None
+        # Now we know that atleast one time, but maybe twice, these calc will be needed
         #Calculate all positions
         left = min(k.rect.x for k in self.items)
         top = min(k.rect.y for k in self.items)
+        # To find eg Width: Find the x value for the item that is furthest right,
+        # Then, remove the x value for item that is furthest left
+        # Now we have width from start of item furthest left to start of item furthest right,
+        # So add width of item furthest right, and now we have total width.
         width = max(k.rect.x for k in self.items) - left + self.items[self.find_rightmost()].rect.w
         height = max(k.rect.y for k in self.items) - top + self.items[self.find_lowest()].rect.h
         offset_height_topside = 40
         offset_height_underside = 10
-        offset_w = 30
+        offset_width = 30
         if self.title != "":
             label = baseFont.render(self.title, True, self.color)
             screen.blit(label, (left + (width - label.get_width()) / 2, top - 32))
         if self.outline:
-            #Draw a line around rect
+            #Draw line around rect
+            # If width is large enough, just do entire program width
             if width > 400:
-                width = screen.get_width() - 4 * offset_w
-            pygame.draw.line(screen,self.color,(left-offset_w,top-offset_height_topside),(left+width+offset_w,top-offset_height_topside),3)
-            pygame.draw.line(screen, self.color, (left - offset_w, top + height + offset_height_underside), (left + width + offset_w, top + height + offset_height_underside), 3)
-            #pygame.draw.rect(screen, self.color, pygame.Rect(left,top,width,height), 3)
+                width = screen.get_width() - 4 * offset_width
+            pygame.draw.line(screen,self.color,(left-offset_width,top-offset_height_topside),(left+width+offset_width,top-offset_height_topside),3)
+            pygame.draw.line(screen, self.color, (left - offset_width, top + height + offset_height_underside), (left + width + offset_width, top + height + offset_height_underside), 3)
     def update(self,event):
         return None
 
