@@ -41,35 +41,129 @@ class Box:
         self.clicked = pygame.mouse.get_pressed() != (0, 0, 0)
         self.isActive = True if self.rect.collidepoint(self.mousePos) else False
 
+class Group:
+    groups = []
+    def __init__(self,outline=None,title=None,**myObjects):
+        if outline is None:
+            outline = False
+        if title is None:
+            title = ""
+        self.title = title
+        self.items = list(myObjects.values())
+        self.outline = outline
+        self.color = grey
+        self.groups.append(self)
 
-class ColorPicker:
-    def __init__(self, rect, text, textRec,buddy,pos = 0):
-        self.rect = pygame.Rect(rect)
-        self.image = pygame.Surface((self.rect.w, self.rect.h))
-        self.image.fill(white)
-        self.text = text
-        self.buddy = buddy
-        self.textRec = pygame.Rect(textRec)
-        #self.color = pygame.Color(0,0,0)
-        self.rad = self.rect.h // 2
-        self.pwidth = self.rect.w - self.rad * 2
-        h = self.rect.h
-        self.pos = pos
-        self.h_1 = 0
-        self.s_1 = 0
-        self.p = 0
-
-    def get_color(self):
-        color = pygame.Color(0)
-        if self.pos == 0:
-            color.hsla = (int(self.p * self.pwidth*1.2), int((self.buddy.p*self.buddy.pwidth)/3), 50, 100)
-        if self.pos == 1:
-            color.hsla = (int(self.buddy.p * self.buddy.pwidth*1.2), int((self.p * self.pwidth)/3), 50, 100)
-        if self.pos == 2:
-            color.hsla = (int(self.h_1),int(self.s_1), 50, 100)
-        return color
-
+    def find_rightmost(self):
+        most_right = 0
+        most_right_index = 0
+        for index, item in enumerate(self.items):
+            if item.rect.x > most_right:
+                most_right_index = index
+        return most_right_index
+    def find_lowest(self):
+        most_low = 0
+        most_low_index = 0
+        for index, item in enumerate(self.items):
+            if item.rect.y > most_low:
+                most_low_index = index
+        return most_low_index
+    def draw(self):
+        # Guard statement, if neither outline or title requested, then just return
+        if self.title == "" and not self.outline:
+            return None
+        #Calculate all positions
+        left = min(k.rect.x for k in self.items)
+        top = min(k.rect.y for k in self.items)
+        width = max(k.rect.x for k in self.items) - left + self.items[self.find_rightmost()].rect.w
+        height = max(k.rect.y for k in self.items) - top + self.items[self.find_lowest()].rect.h
+        offset_height_topside = 40
+        offset_height_underside = 10
+        offset_w = 30
+        if self.title != "":
+            label = baseFont.render(self.title, True, self.color)
+            screen.blit(label, (left + (width - label.get_width()) / 2, top - 32))
+        if self.outline:
+            #Draw a line around rect
+            if width > 400:
+                width = screen.get_width() - 4 * offset_w
+            pygame.draw.line(screen,self.color,(left-offset_w,top-offset_height_topside),(left+width+offset_w,top-offset_height_topside),3)
+            pygame.draw.line(screen, self.color, (left - offset_w, top + height + offset_height_underside), (left + width + offset_w, top + height + offset_height_underside), 3)
+            #pygame.draw.rect(screen, self.color, pygame.Rect(left,top,width,height), 3)
     def update(self,event):
+        return None
+
+class InputBox(Box):
+    def __init__(self, name, color, rect):
+        super().__init__(rect)
+        self.name = name
+        self.color = color
+
+    def draw(self):
+        label = baseFont.render(self.name, True, self.color)
+        screen.blit(label, (self.rect.x + (self.rect.w - label.get_width()) / 2, self.rect.y - 32))
+        pygame.draw.rect(screen, self.color, self.rect, 3)
+
+
+class ColorPicker(InputBox):
+    combinedColor = pygame.Color(0,0,0)
+    def __init__(self, name, rect):
+        super().__init__("",grey,rect)
+        self.rect = pygame.Rect(rect)
+        self.rad = self.rect.h // 2
+        self.start = self.rect.x + 6
+        self.end = self.rect.x + self.rect.w - 6
+        self.value = self.start
+        self.isActive = True
+        self.color = name
+        self.rect.x = self.rect.x + 20
+
+    def draw(self):
+        #super().draw()
+        if "Red" == self.color:
+            #screen.blit(screen, self.rect)
+            center = self.rect.left + (self.rad/2) + (self.value-self.rect.x-7), self.rect.centery
+            self.combinedColor.r = self.value-self.rect.x + 6
+            pygame.draw.circle(screen, (self.combinedColor.r,0,0), center, self.rect.height // 2.5)
+            for i in range(self.rect.width-10):
+                pygame.draw.rect(screen,(i,0,0),(self.rect.x+i,self.rect.y+self.rect.height/2-5,10,10),1)
+        if "Green" == self.color:
+            #screen.blit(screen, self.rect)
+            self.combinedColor.g = self.value - self.rect.x + 6
+            center = self.rect.left + (self.rad / 2) + (self.value - self.rect.x - 7), self.rect.centery
+            pygame.draw.circle(screen, (0,self.combinedColor.g, 0), center, self.rect.height // 2.5)
+            for i in range(self.rect.width-10):
+                pygame.draw.rect(screen,(0,i,0),(self.rect.x+i,self.rect.y+self.rect.height/2-5,10,10),1)
+        if "Blue" == self.color:
+            #screen.blit(self.image, self.rect)
+            center = self.rect.left + (self.rad / 2) + (self.value - self.rect.x - 7), self.rect.centery
+            self.combinedColor.b = self.value - self.rect.x + 6
+            pygame.draw.circle(screen, (0,0,self.combinedColor.b), center, self.rect.height // 2.5)
+            for i in range(self.rect.width-10):
+                pygame.draw.rect(screen,(0,0,i),(self.rect.x+i,self.rect.y+self.rect.height/2-5,10,10),1)
+        #pygame.draw.line(screen, self.color, (self.start, self.rect.y + 25), (self.end, self.rect.y + 25), 2)
+        #pygame.draw.line(screen, self.color, (self.value, self.rect.y + 5), (self.value, self.rect.y + 45), 12)
+        #screen.blit(self.image, self.rect)
+        #pygame.draw.circle(screen, self.combinedColor, (700, 700), self.rect.height)
+
+    def update(self, event):
+        super().update(event)
+        previousStart = self.start
+        self.start = self.rect.x + 6
+        self.end = self.rect.x + self.rect.w - 6
+        self.value += self.start - previousStart
+        if self.isActive:
+            if self.clicked:
+                if self.start <= self.mousePos[0] <= self.end: self.value = self.mousePos[0]
+
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 4:
+                    self.value = min(self.value + 10, self.end)
+                elif event.button == 5:
+                    self.value = max(self.value - 10, self.start)
+        self.draw()
+
+    def update2(self,event):
         moude_buttons = pygame.mouse.get_pressed()
         mouse_pos = pygame.mouse.get_pos()
         if moude_buttons[0] and self.rect.collidepoint(mouse_pos):
@@ -77,14 +171,12 @@ class ColorPicker:
             self.p = (max(0, min(self.p, 1)))
 
 
-    def draw(self):
+    def draw2(self):
+        global screen
         # Color selector
         h = self.rect.h
         if self.pos == 0:
-            for i in range(0,self.pwidth):
-                color = pygame.Color(0)
-                color.hsla = ((i*1.2), int((self.buddy.p*i)/3), 50, 100)
-                pygame.draw.rect(self.image, color, (i + self.rad, h // 3, 1, h - 2 * h // 3))
+            print("Hello")
         if self.pos == 1:
             for i in range(0,self.pwidth):
                 color = pygame.Color(0)
@@ -162,18 +254,6 @@ class BoxWithText(Box):
                     if self.name == showValueInBarsBox.name: displayValuesInOutput = False
 
 
-class InputBox(Box):
-    def __init__(self, name, color, rect):
-        super().__init__(rect)
-        self.name = name
-        self.color = color
-
-    def draw(self):
-        label = baseFont.render(self.name, True, self.color)
-        screen.blit(label, (self.rect.x + (self.rect.w - label.get_width()) / 2, self.rect.y - 32))
-        pygame.draw.rect(screen, self.color, self.rect, 3)
-
-
 class TextBox(InputBox):
     def __init__(self, name, color, rect, text='100'):
         super().__init__(name, color, rect)
@@ -228,8 +308,9 @@ class SlideBox(InputBox):
         self.start = self.rect.x + 6
         self.end = self.rect.x + self.rect.w - 6
         self.value += self.start - previousStart
-        delay = ((self.value-self.start) * someFactor)+1
-        self.name = "Delay:" + str(((self.value-self.start) * someFactor)+1) + "ms"
+        if "Delay" in self.name:
+            delay = ((self.value-self.start) * someFactor)+1
+            self.name = "Delay:" + str(((self.value-self.start) * someFactor)+1) + "ms"
         if self.isActive:
             if self.clicked:
                 if self.start <= self.mousePos[0] <= self.end: self.value = self.mousePos[0]
@@ -435,28 +516,19 @@ delayX10Box = BoxWithText("Increase delay", (60, 620, 60, 50), "x10", "x1")
 includeSettingsInOutputBox = BoxWithText("Include settings in Animation", (250, 620, 95, 50), "Include", "Exclude")
 showValueInBarsBox = BoxWithText("Output values in bars", (510, 620, 95, 50), "Include", "Exclude")
 outputFormatBox = DropdownBox('Output Format', (60, 720, 220, 50), baseFont,grey,None)
-#Color picking
-P1_colorPickerBox = ColorPicker((260, 800+60*0, 600, 60),"Color pointer 1:",(60, 800+60*0+50, 200, 60),None,2)
-P1_satPickerBox = ColorPicker((570, 800+60*0, 300, 60),"",(0, 0, 0, 0),P1_colorPickerBox,1)
-P2_colorPickerBox = ColorPicker((260, 800+60*1, 300, 60),"Color pointer 2:",(60, 800+60*1+50, 200, 60),None)
-P2_satPickerBox = ColorPicker((570, 800+60*1, 300, 60),"",(0, 0, 0, 0),P2_colorPickerBox,1)
-P3_colorPickerBox = ColorPicker((260, 800+60*2, 300, 60),"Color pointer 3:",(60, 800+60*2+50, 200, 60),None)
-P3_satPickerBox = ColorPicker((570, 800+60*2, 300, 60),"",(0, 0, 0, 0),P3_colorPickerBox,1)
-back_colorPickerBox = ColorPicker((260, 800+60*3, 300, 60),"Background:",(60, 800+60*3+50, 200, 60),None)
-back_satPickerBox = ColorPicker((570, 800+60*3, 300, 60),"",(0, 0, 0, 0),back_colorPickerBox,1)
-bar_colorPickerBox = ColorPicker((260, 800+60*4, 300, 60),"Standard bar:",(60, 800+60*4+50, 200, 60),None)
-bar_satPickerBox = ColorPicker((570, 800+60*4, 300, 60),"",(0, 0, 0, 0),bar_colorPickerBox,1)
 
-P1_colorPickerBox.buddy = P1_satPickerBox
-P2_colorPickerBox.buddy = P2_satPickerBox
-P3_colorPickerBox.buddy = P3_satPickerBox
-back_colorPickerBox.buddy = back_satPickerBox
-bar_colorPickerBox.buddy = bar_satPickerBox
+#Color picking
+P1_colorPickerBox = ColorPicker("Red",(400, 900+30*0, 255, 30))
+P2_colorPickerBox = ColorPicker("Blue",(400, 900+30*1, 255, 30))
+P3_colorPickerBox = ColorPicker("Green",(400, 900+30*2, 255, 30))
+
+#Groups
+AdvancedGroup = Group(True,a= delayX10Box,b=includeSettingsInOutputBox,c=showValueInBarsBox,d=outputFormatBox)
+ColorGroup = Group(True,title="RGB color selector",a= P1_colorPickerBox,b=P2_colorPickerBox,c=P3_colorPickerBox)
 #Add ref to all elements in list.
-ListOfAllBoxes.extend([sizeBox, loopBox, delayBox, algorithmBox, playButton, stopButton, advancedText, \
+ListOfAllBoxes.extend([sizeBox, loopBox, delayBox, algorithmBox, playButton, stopButton, \
                        delayX10Box, includeSettingsInOutputBox, showValueInBarsBox, outputFormatBox, \
-                       P1_colorPickerBox,P2_colorPickerBox,P3_colorPickerBox,back_colorPickerBox,bar_colorPickerBox \
-                       ,P2_satPickerBox,P3_satPickerBox,back_satPickerBox,bar_satPickerBox])
+                       P1_colorPickerBox,P2_colorPickerBox,P3_colorPickerBox,AdvancedGroup,ColorGroup])
 def updateWidgets(event):
     global ListOfAllBoxes
     # Instead of looping
