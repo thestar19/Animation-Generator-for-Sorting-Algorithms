@@ -92,15 +92,15 @@ def printProgress(progress):
 # Prints progress bar, only to be called if
 # in log values of type 2 exists and terminal is clear
 def printProgressBar(currentValue):
-    print("Progress:" +  str(currentValue) + "%")
-    #print("""[""",end="")
-    #progressCounter = 0
-    #for i in range(0,int(currentValue),5):
-    #    print("""#""",end="")
-    #    progressCounter +=1
-    #for i in range(0,20-progressCounter):
-    #    print("""·""", end="")
-    #print("""]""")
+    #print("Progress:" +  str(currentValue) + "%")
+    print("""[""",end="")
+    progressCounter = 0
+    for i in range(0,int(currentValue),5):
+        print("""#""",end="")
+        progressCounter +=1
+    for i in range(0,20-progressCounter):
+        print("""·""", end="")
+    print("""]""")
 
 def printSign():
     print("""
@@ -177,6 +177,7 @@ def updateDisplay(terminal = False):
     if not TEXTLOG_UPDATE:
         return -1
     TEXTLOG_UPDATE = False
+    system("clear")
     #runTime = time.strftime("%H:%M:%S", time.localtime(time.time() - startUpTime - 60 * 60))
     printSign()
     #print(str(runTime))
@@ -321,6 +322,8 @@ def listAsStringGood(myList):
 
 def createPicturesForOutput(TERMINAL_MODE,counter_for_number_pictures_created,counter_skipping_images_during_creation,numbers,alg_iterator,OUTPUT_WINDOW_SIZE):
     global SCREENSHOT_FILENAME
+    screenshot = pygame.Surface(OUTPUT_WINDOW_SIZE)
+    screenshot.blit(display.screen, (0, 0))
     try:
         while True:
             if len(numbers) < 50 or counter_for_number_pictures_created % 1000 == 5:
@@ -387,7 +390,7 @@ def main():
     counter_skipping_images_during_creation = 0
 
     #Used for rendering window
-    OUTPUT_WINDOW_SIZE = (900, 400)
+    OUTPUT_WINDOW_SIZE = (900, 460)
     
     #Just to make sure nothing from prev runs is left
     deleteTempFiles()
@@ -501,7 +504,7 @@ if __name__ == '__main__':
             printL(4,"Debug enabled")
             DEBUG = True
     #Check if correct software is installed
-    checkVersionOfPYAV()
+    #checkVersionOfPYAV()
     #Check for any args in program init
     if len(sys.argv) > 2:
         all_args = sys.argv.copy()
@@ -581,6 +584,7 @@ if __name__ == '__main__':
         print(f"    Number of elements in list to sort={output_size}")
         print(f"    Include numbers in bars={add_numbers_to_bars}")
         print(f"    Sorting alg={output_alg}")
+        print(f"    Benchmark mode={benchmark}")
         if output_format == "GIF":
             print(f"    Number of loops={output_loops}")
 
@@ -610,8 +614,9 @@ if __name__ == '__main__':
         else:
             createMP4(counter_for_number_pictures_created,SCREENSHOT_FILENAME,output_delay,True)
         if benchmark:
+            print("Got to benchmark part")
             deleteExistingFile(BENCHMARK_TEXT_FILE)
-            f = open(BENCHMARK_TEXT_FILE,"w")
+            f = open(BENCHMARK_TEXT_FILE,"w+")
             f.write(f"pictures={counter_for_number_pictures_created}")
             f.close()
         print("Output generation finished!")

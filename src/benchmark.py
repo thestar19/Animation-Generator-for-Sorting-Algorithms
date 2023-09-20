@@ -102,7 +102,7 @@ def deleteExistingFile(name):
 
 def readNumberOfPictures():
     global BENCHMARK_TEMP_TEXT_FILE
-    f = open(BENCHMARK_TEMP_TEXT_FILE,mode="r")
+    f = open(BENCHMARK_TEMP_TEXT_FILE,mode="r+")
     data = f.readline().split("=")[1]
     f.close()
     deleteExistingFile(BENCHMARK_TEMP_TEXT_FILE)
