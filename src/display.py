@@ -27,6 +27,8 @@ class Colors:
     red = (255, 50, 50)
     black = (0, 0, 0)
     blue = (50, 50, 255)
+    background = copy(white)#(201, 201, 201)
+    text = copy(black)
 
 
 standard = Colors()
@@ -55,7 +57,6 @@ class sampleSortAnimation(Box):
     def __init__(self, rect):
         super().__init__(rect)
         self.isActive = False
-        self.rect = pygame.Rect(rect)
         self.myRed = standard.red
         self.myBlue = standard.blue
         self.myGreen = standard.green
@@ -78,7 +79,8 @@ class sampleSortAnimation(Box):
         prev_displayValuesInOutput = displayValuesInOutput
         displayValuesInOutput = False
         numBars = len(array)
-        drawBars(array, redBar1, redBar2, blueBar1, blueBar2, displaySize=(self.rect.h,self.rect.w), leftOffset=self.rect.left,topOffset=self.rect.y, redBar_override_color=self.myRed,blueBar_override_color=self.myBlue,greenRows_override_color=self.myGreen,base_override_color=self.myBase)
+        pygame.draw.rect(screen,animationColors.background,(self.rect.left,self.rect.y,self.rect.w,self.rect.h))
+        drawBars(array, redBar1, redBar2, blueBar1, blueBar2, displaySize=(self.rect.w,self.rect.h), leftOffset=self.rect.left,topOffset=self.rect.y)
         numBars = prev_numBars
         displayValuesInOutput = prev_displayValuesInOutput
         return None
@@ -110,6 +112,26 @@ class Group:
             if item.rect.y > most_low:
                 most_low_index = index
         return most_low_index
+    def checkIfIncludeLabelInLine(self):
+        for item in self.items:
+            if hasattr(item, "render_text_on_side") and hasattr(item, "myLabel"):
+                if item.render_text_on_side:
+                    return True
+        return False
+
+    def findMaxLengthOfLabelInLine(self):
+        currentMax = 0
+        for item in self.items:
+            # Guard statements
+            if not hasattr(item, "render_text_on_side") or not hasattr(item, "myLabel"):
+                continue
+            if item.myLabel is None or not item.render_text_on_side:
+                continue
+            # Actually do calc
+            if item.myLabel.get_width() > currentMax:
+                currentMax = item.myLabel.get_width()
+        return currentMax
+
     def draw(self):
         # Guard statement, if neither outline or title requested, then just return
         if self.title == "" and not (self.upper_line or self.lower_line):
@@ -133,13 +155,19 @@ class Group:
         if self.upper_line or self.lower_line:
             #Draw line around rect
             # If width is large enough, just do entire program width
-            if width > 400:
+            if width > 600:
                 width = screen.get_width() - 4 * offset_width
+            if self.checkIfIncludeLabelInLine():
+                width += self.findMaxLengthOfLabelInLine()
+                left -= self.findMaxLengthOfLabelInLine()
+                if left < 40:
+                    left = 2* offset_width
             if self.upper_line:
                 pygame.draw.line(screen,self.color,(left-offset_width,top-offset_height_topside),(left+width+offset_width,top-offset_height_topside),3)
             if self.lower_line:
                 pygame.draw.line(screen, self.color, (left - offset_width, top + height + offset_height_underside), (left + width + offset_width, top + height + offset_height_underside), 3)
     def update(self,event):
+        self.draw()
         return None
 
 class InputBox(Box):
@@ -179,7 +207,7 @@ class ColorPicker(InputBox):
             self.combinedColor.r = self.value-self.rect.x
             pygame.draw.circle(screen, (self.combinedColor.r,0,0), center, self.rect.height // 2.5)
             for i in range(0,254):
-                pygame.draw.rect(screen,(i,0,0),(self.rect.x+i,self.rect.y+self.rect.height/2-5,10,10),1)
+                pygame.draw.rect(screen,(i,0,0),(self.rect.x+i,self.rect.y+(self.rect.height/2)-5,10,10),1)
         if "Green" == self.color:
             self.combinedColor.g = self.value - self.rect.x
             center = self.rect.left + (self.rad / 2) + (self.value - self.rect.x - 7), self.rect.centery
@@ -235,7 +263,7 @@ class BoxWithText(Box):
         self.myFunction = myFunction
         # Without storing baseWidth, we risk constantly increasing size of buttons everytime we redraw buttons to fit text
         self.baseWidth = self.rect.width
-
+        self.myLabel = None
         if kwargs.get("side_text"):
             self.render_text_on_side = kwargs.get("side_text")
         else:
@@ -251,6 +279,7 @@ class BoxWithText(Box):
         label = baseFont.render(self.name, True, standard.grey)
         if self.render_text_on_side:
             screen.blit(label, (self.rect.x - label.get_width()-10, self.rect.y+(self.rect.height/4)))
+            self.myLabel = label
         else:
             screen.blit(label, (self.rect.x + (self.rect.w - label.get_width()) / 2, self.rect.y - 32))
 
@@ -268,6 +297,7 @@ class BoxWithText(Box):
                 self.text = self.text2
             else:
                 self.text = self.text1
+            self.draw()
 
 
 class TextBox(InputBox):
@@ -526,7 +556,7 @@ def showValueInBarsBox(self):
         displayValuesInOutput = True
 
 
-def BlueBarsColorBoxFunction(self):
+def blueBarsColorBoxFunction(self):
     global P1_colorPickerBox
     global preview_colors
     if self.text == "Set":
@@ -534,7 +564,8 @@ def BlueBarsColorBoxFunction(self):
     else:
         animationColors.blue = standard.blue
     preview_colors.update(None)
-def RedBarsColorBoxFunction(self):
+
+def redBarsColorBoxFunction(self):
     global P1_colorPickerBox
     global preview_colors
     if self.text == "Set":
@@ -542,7 +573,17 @@ def RedBarsColorBoxFunction(self):
     else:
         animationColors.red = standard.red
     preview_colors.update(None)
-def BaseBarsColorBoxFunction(self):
+
+def greenBarsColorBoxFunction(self):
+    global P1_colorPickerBox
+    global preview_colors
+    if self.text == "Set":
+        animationColors.green = copy(P1_colorPickerBox.combinedColor)
+    else:
+        animationColors.green = standard.green
+    preview_colors.update(None)
+
+def baseBarsColorBoxFunction(self):
     global P1_colorPickerBox
     global preview_colors
     if self.text == "Set":
@@ -550,6 +591,27 @@ def BaseBarsColorBoxFunction(self):
     else:
         animationColors.grey = standard.grey
     preview_colors.update(None)
+
+def backgroundColorBoxFunction(self):
+    global P1_colorPickerBox
+    global preview_colors
+    if self.text == "Set":
+        animationColors.background = copy(P1_colorPickerBox.combinedColor)
+    else:
+        animationColors.background = standard.background
+    preview_colors.update(None)
+
+def textInBarsColorBoxFunction(self):
+    global P1_colorPickerBox
+    global preview_colors
+    if self.text == "Set":
+        animationColors.text = copy(P1_colorPickerBox.combinedColor)
+    else:
+        animationColors.text = standard.black
+    preview_colors.update(None)
+
+
+
 
 # Global Settings - used for animation generation
 numBars = 0
@@ -585,28 +647,34 @@ includeSettingsInOutputBox = BoxWithText("Include settings in Animation", (250, 
 showValueInBarsBox = BoxWithText("Output values in bars", (510, 620, 95, 50), "Include", "Exclude", showValueInBarsBox)
 outputFormatBox = DropdownBox('Output Format', (60, 720, 220, 50), baseFont, standard.grey,None)
 
-#Color picking
+#Color picking - sliders
 P1_colorPickerBox = ColorPicker("Red",(600, 850+30*0, 255, 30),True)
 P2_colorPickerBox = ColorPicker("Blue",(600, 850+30*1, 255, 30))
 P3_colorPickerBox = ColorPicker("Green",(600, 850+30*2, 255, 30))
-BlueBarsColorBox = BoxWithText("Color blue bars:",(210,800+60*0,50,50),"Set","Reset",BlueBarsColorBoxFunction,side_text=True)
-RedBarsColorBox = BoxWithText("Color red bars:",(210,800+60*1,50,50),"Set","Reset",RedBarsColorBoxFunction,side_text=True)
-BaseBarsColorBox = BoxWithText("Color base bars:",(210,800+60*2,50,50),"Set","Reset",BaseBarsColorBoxFunction,side_text=True)
+# Color picking - set/reset buttons
+BlueBarsColorBox = BoxWithText("Blue bars",(160,820+60*0,50,50),"Set","Reset",blueBarsColorBoxFunction,side_text=True)
+RedBarsColorBox = BoxWithText("Red bars",(160,820+60*1,50,50),"Set","Reset",redBarsColorBoxFunction,side_text=True)
+greenBarsColorBox = BoxWithText("Green bars",(160,820+60*2,50,50),"Set","Reset",greenBarsColorBoxFunction,side_text=True)
+BaseBarsColorBox = BoxWithText("Normal bars",(160,820+60*3,50,50),"Set","Reset",baseBarsColorBoxFunction,side_text=True)
+textInBarsColorBox = BoxWithText("Text in bars",(160,820+60*4,50,50),"Set","Reset",textInBarsColorBoxFunction,side_text=True)
+backgroundColorBox = BoxWithText("Background",(160,820+60*5,50,50),"Set","Reset",backgroundColorBoxFunction,side_text=True)
+#Sample animation for choosing color
+preview_colors = sampleSortAnimation((600,850+30*4-10,255,90*1.2))
+
 
 #Groups
 # Very important, objects must be in order!
 # if not, things will not be scaled correctly
-AdvancedGroup = Group((True,True),a = delayX10Box,b = includeSettingsInOutputBox,c = showValueInBarsBox,d = outputFormatBox)
-ColorGroup = Group((False,True),title = "RGB color selector",a = P1_colorPickerBox,b = P2_colorPickerBox,c = P3_colorPickerBox)
-
-#Sample animation for choosing color
-preview_colors = sampleSortAnimation((600,720,280,350))
+advancedGroup = Group((True,True),a = delayX10Box,b = includeSettingsInOutputBox,c = showValueInBarsBox,d = outputFormatBox)
+slidersColorGroup = Group((False,True),title = "RGB color selector",a = P1_colorPickerBox,b = P2_colorPickerBox,c = P3_colorPickerBox,d = preview_colors)
+setResetColorGroup = Group((False,True), title = "Color for", a = BlueBarsColorBox, b = RedBarsColorBox,c = greenBarsColorBox, d = BaseBarsColorBox, e = textInBarsColorBox, f = backgroundColorBox)
 
 #Add ref to all elements in list.
-ListOfAllBoxes.extend([sizeBox, loopBox, delayBox, algorithmBox, playButton, stopButton, \
-                       delayX10Box, includeSettingsInOutputBox, showValueInBarsBox, outputFormatBox, \
-                       P1_colorPickerBox,P2_colorPickerBox,P3_colorPickerBox,AdvancedGroup,ColorGroup,preview_colors, \
-                       BlueBarsColorBox,RedBarsColorBox,BaseBarsColorBox])
+ListOfAllBoxes.extend([sizeBox, loopBox, delayBox, algorithmBox, playButton, stopButton,
+                       delayX10Box, includeSettingsInOutputBox, showValueInBarsBox, outputFormatBox,
+                       P1_colorPickerBox,P2_colorPickerBox,P3_colorPickerBox,advancedGroup,
+                       slidersColorGroup,preview_colors,BlueBarsColorBox,RedBarsColorBox,BaseBarsColorBox,
+                       textInBarsColorBox,backgroundColorBox,setResetColorGroup,greenBarsColorBox])
 def updateWidgets(event):
     global ListOfAllBoxes
     # Instead of looping
@@ -630,8 +698,8 @@ def drawBars(array, redBar1, redBar2, blueBar1, blueBar2, greenRows={},displaySi
     global displayValuesInOutput
     global windowSize
     if displaySize is None:
-        displaySize = (430,900)
-    height,width = displaySize
+        displaySize = (900,430)
+    width,height = displaySize
     '''Draw the bars and control their colors'''
     if numBars != 0:
         bar_width = float(width) / numBars
@@ -649,16 +717,11 @@ def drawBars(array, redBar1, redBar2, blueBar1, blueBar2, greenRows={},displaySi
             color = animationColors.grey
         if displayValuesInOutput and numBars < 20 and do_sorting:
             top = (height - array[num]) + 15
-            #if 360 < (width - array[num]):
-            #    top = (width - array[num]) - 30
-            #else:
-                #top = (width - array[num]) + 40
-            drawText(str(array[num]),standard.black,((num * bar_width) + bar_width/2,top,ceil_width/2,30))
+            drawText(str(array[num]),animationColors.text,((num * bar_width) + bar_width/2,top,ceil_width/2,30))
         if kwargs.get("leftOffset") and kwargs.get("topOffset"):
-            pygame.draw.rect(screen, color, (kwargs.get("leftOffset") + (num * bar_width), kwargs.get("topOffset") + (height - array[num]*1.2), ceil_width, array[num]*1.2))
+            pygame.draw.rect(screen, color, (kwargs.get("leftOffset") + (num * bar_width), kwargs.get("topOffset") + (height - array[num]), ceil_width, array[num]))
         else:
             pygame.draw.rect(screen, color, (num * bar_width, 30 + height - array[num], ceil_width, array[num]))
-        #Maybe draw text
 
 
 
@@ -692,7 +755,11 @@ def draw_polygon_alpha(surface, color, points):
 
 def drawInterface(array, redBar1, redBar2, blueBar1, blueBar2, **kwargs):
     '''Draw all the interface'''
-    screen.fill(standard.white)
+    # This if statement gives user option to select background color for animation
+    if do_sorting:
+        screen.fill(animationColors.background)
+    else:
+        screen.fill(standard.white)
     drawBars(array, redBar1, redBar2, blueBar1, blueBar2, **kwargs)
 
     if (time() - timer_space_bar) < 0.1:
