@@ -585,6 +585,7 @@ if __name__ == '__main__':
     #checkVersionOfPYAV()
     #Check for any args in program init
     if len(sys.argv) > 2:
+        shell_options = analyzeInputsArgs(available_args)
         # Just to make sure nothing from prev runs is left
         deleteTempFiles()
         # Create pictures if it does not exists
