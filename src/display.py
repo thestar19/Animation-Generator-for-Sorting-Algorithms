@@ -554,7 +554,6 @@ def BaseBarsColorBoxFunction(self):
 # Global Settings - used for animation generation
 numBars = 0
 do_sorting = False
-paused = False
 timer_space_bar = 0
 # Global Settings - used for determining with what settings to render animations
 someFactor = 1
@@ -696,11 +695,7 @@ def drawInterface(array, redBar1, redBar2, blueBar1, blueBar2, **kwargs):
     screen.fill(standard.white)
     drawBars(array, redBar1, redBar2, blueBar1, blueBar2, **kwargs)
 
-    if paused and (time() - timer_space_bar) < 0.5:
-        draw_rect_alpha(screen, (255, 255, 0, 127), [(850 / 2) + 10, 150 + 10, 10, 50])
-        draw_rect_alpha(screen, (255, 255, 0, 127), [(850 / 2) + 40, 150 + 10, 10, 50])
-
-    elif not paused and (time() - timer_space_bar) < 0.1:
+    if (time() - timer_space_bar) < 0.1:
         x, y = (850 / 2), 150
         draw_polygon_alpha(screen, (150, 255, 150, 127),
                            ((x + 10, y + 10), (x + 10, y + 50 + 10), (x + 50, y + 25 + 10)))
