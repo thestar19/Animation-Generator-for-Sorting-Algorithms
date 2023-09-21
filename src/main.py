@@ -33,7 +33,7 @@ class bcolors:
 
 TEXTLOG = []
 TEXTLOG_UPDATE = True
-DEBUG = False
+DEBUG = True
 CURRENT_OUTPUT_FORMATS = ["GIF","MP4"]
 SCREENSHOT_FILENAME = "pictures/screenshot"  # + a counter number + JPG
 BENCHMARK_TEXT_FILE = "temp_file_for_benchmark.txt"
@@ -91,10 +91,10 @@ def printProgress(progress):
 def printProgressBar(currentValue):
     print("""[""",end="")
     progressCounter = 0
-    for i in range(0,int(currentValue),5):
+    for _ in range(0,int(currentValue),5):
         print("""#""",end="")
         progressCounter +=1
-    for i in range(0,20-progressCounter):
+    for _ in range(0,20-progressCounter):
         print("""·""", end="")
     print("""]""")
 
@@ -170,12 +170,12 @@ def updateDisplay(terminal = False):
         TEXTLOG.clear()
         return -1
     # Without this, much resources would be wasted on rewriting log terminal display
-    if not TEXTLOG_UPDATE:
+    if not TEXTLOG_UPDATE or not display.displayLog_update:
         return -1
     TEXTLOG_UPDATE = False
+    display.displayLog_update = False
     system("clear")
     #runTime = time.strftime("%H:%M:%S", time.localtime(time.time() - startUpTime - 60 * 60))
-    system("clear")
     printSign()
     #print(str(runTime))
     maxProgress = -1
@@ -186,14 +186,13 @@ def updateDisplay(terminal = False):
     if -1 < maxProgress < 100:
         printProgressBar(maxProgress)
         print("--------------------------------------------")
-    for type,value in TEXTLOG:
+    for type,value in TEXTLOG + display.displayLog:
         if type == 1:
             print(value)
         if type == 3:
             print(f"{bcolors.WARNING} Warning: {value} {bcolors.ENDC}")
         if type == 4 and DEBUG:
             print(f"{bcolors.OKBLUE} Debug: {value} {bcolors.ENDC}")
-
 def writeGifFile(listOfImages,numberOfLoops,delay):
     newGif = iio.imopen('sorting.gif', "w", plugin="pillow")
     newGif.write(listOfImages, duration=int(delay), loop=numberOfLoops, optimize=True)

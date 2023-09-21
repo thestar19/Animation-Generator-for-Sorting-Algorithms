@@ -12,7 +12,7 @@ import datetime
 # Global Variables
 BENCHMARK_TEMP_TEXT_FILE = "temp_file_for_benchmark.txt"
 BENCHMARK_RESULTS_FILE = "benchmark_results.txt"
-
+DEBUG = False
 
 def __uniqueid__():
     """
@@ -134,7 +134,14 @@ def appendResult(aResult):
 
 def runARound(size,format,algorithm,auto_loop = 3):
     command = f"python3 src/main.py -f {format} -s {size} -d 10 -l 0 -a {algorithm} -bench true"
-    aTimer = timeit.Timer(lambda: runCommand(command))
+    theFunction = None
+    if DEBUG:
+        print("----------------------------------------------------------------------------------------")
+        theFunction = lambda: print(runCommand(command).decode("utf-8"))
+        print("----------------------------------------------------------------------------------------")
+    else:
+        theFunction = lambda: runCommand(command)
+    aTimer = timeit.Timer(theFunction)
     thisTime = aTimer.timeit(auto_loop)
     numberOfPictures = readNumberOfPictures()
     myResult = result(format,size,algorithm,thisTime,numberOfPictures,auto_loop)
@@ -142,6 +149,7 @@ def runARound(size,format,algorithm,auto_loop = 3):
 
 def main():
     global BENCHMARK_RESULTS_FILE
+    global DEBUG
     if len(sys.argv) <= 2 and sys.argv[1] != "-standard":
         print(f"No valid arguments found")
         sys.exit(0)
@@ -168,6 +176,7 @@ def main():
     size = 0
     print_time = True
     standard_benchmark = False
+    standard_size = 0
     format = "GIF"
     algorithm = "insertion"
     for inst,value in instructions:
@@ -180,8 +189,17 @@ def main():
         # Check for standard arg
         if (inst == "-standard") and (value == "true"):
             standard_benchmark = True
+            standard_size = 0
+        elif (inst == "-standard") and (value == "XXL"):
+            standard_benchmark = True
+            standard_size = 1
         elif (inst == "-standard"):
-            print(f"Incorrect args, -s value {value} is not true or false")
+            print(f"Incorrect args, -s value {value} is not true, false or XXL")
+            sys.exit(0)
+        if (inst == "-debug") and (value == "true"):
+            DEBUG = True
+        elif (inst == "-debug"):
+            print(f"Incorrect args, -t value {value} is not true or false")
             sys.exit(0)
         if (inst == "-t" or inst == "-time") and (value == "true"):
             print_time = True
@@ -223,6 +241,11 @@ def main():
     if max_len < min_len:
         print(f"Incorrect args, min value {min_len} is not smaller than max value {max_len}")
         sys.exit(0)
+    # askjdhfaskjdlhf
+    if DEBUG and standard_size:
+        print(f"Running DEBUG and standard XXL will result in a massive amount of output.")
+        print(f"To remove this error, search for askjdhfaskjdlhf in the benchmark.py file and comment out sys.exit(0)")
+        #sys.exit(0)
     #----------------------------------------------------------------------------------------------
     # This is where actual benchmark happens
     # Change to standard_benchmark
@@ -234,11 +257,23 @@ def main():
         # What sizes: 10,20,50
         # What formats: MP4 and GIF
         resultCounter = 0
-        for format in ["GIF","MP4"]:
-            for alg in  ["quick","insertion","shell"]:
-                for size in [10, 20, 50]:
+        sizes = []
+        if standard_size:
+            print(f"Standard XLL benchmark will now run.\n     Warning tho, this might take a while.")
+            for i in range(10,300,5):
+                sizes.append(i)
+        else:
+            sizes = [10, 20, 50]
+        formats = ["GIF","MP4"]
+        algs = ["quick","insertion","shell"]
+        totalNumberOfRuns = len(sizes) * len(formats) * len(algs) +1
+        progressCounter = 1
+        for format in formats:
+            for alg in  algs:
+                for size in sizes:
                     aResult = runARound(size, format, alg, 1)
-                    printIF(f"Format={format} | Alg={alg} | Size={size} | Total number of pics={aResult.numberOfPictures} | Total time={aResult.thisTime} | Avg pic/time={aResult.numberOfPictures/aResult.thisTime}",True)
+                    printIF(f"({round(100 * float(progressCounter)/float(totalNumberOfRuns),2)}%) Format={format} | Alg={alg} | Size={size} | Total number of pics={aResult.numberOfPictures} | Total time={round(aResult.thisTime,5)} | Avg pic/time={round(aResult.numberOfPictures/aResult.thisTime,5)}",True)
+                    progressCounter +=1
                     if append:
                         appendResult(aResult)
                         resultCounter +=1
@@ -276,7 +311,7 @@ def validateInput(type,input):
 if __name__ == '__main__':
     available_args = ["-r","-rounds","-max","-min","-time","-t", \
                       "-append_to_log","-atl","-standard","-f","-format", \
-                      "-algorithm","-alg","-s","-size"]
+                      "-algorithm","-alg","-s","-size","-debug"]
     if len(sys.argv) > 1:
         if len(sys.argv) == 2 and sys.argv[1] == "help":
             print("--------------------------------------------------------------")
@@ -290,8 +325,9 @@ if __name__ == '__main__':
             print(f"Number of rounds to run: -r or -rounds => 0 < int < 1000")
             print(f"Size of length of array: -s or -size => 0 < int < 1000")
             print(f"Append results to log, only works for -r 1: -atl or -append_to_log => true/false")
-            print(f"Run standard benchmark, ignores other options: -standard => true/false")
+            print(f"Run standard benchmark, ignores other options: -standard => true/false/XXL")
             print(f"Format for testing: -f or -format => GIF or MP4")
+            print(f"Format for testing: -debug => true/false")
             print(f"For random size, specify max & min:")
             print(f"        Max/min value for random length of array: -max or -min => min < max < 1000")
             print(f"What sorting algorithm: -alg or -algorithm => {list(algorithmsDict.keys())}\n\n")
