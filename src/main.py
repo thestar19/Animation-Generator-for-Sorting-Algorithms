@@ -91,10 +91,10 @@ def printProgress(progress):
 def printProgressBar(currentValue):
     print("""[""",end="")
     progressCounter = 0
-    for i in range(0,int(currentValue),5):
+    for _ in range(0,int(currentValue),5):
         print("""#""",end="")
         progressCounter +=1
-    for i in range(0,20-progressCounter):
+    for _ in range(0,20-progressCounter):
         print("""·""", end="")
     print("""]""")
 
@@ -170,12 +170,12 @@ def updateDisplay(terminal = False):
         TEXTLOG.clear()
         return -1
     # Without this, much resources would be wasted on rewriting log terminal display
-    if not TEXTLOG_UPDATE:
+    if (randint(0,20) != 5):
         return -1
     TEXTLOG_UPDATE = False
+    display.displayLog_update = False
     system("clear")
     #runTime = time.strftime("%H:%M:%S", time.localtime(time.time() - startUpTime - 60 * 60))
-    system("clear")
     printSign()
     #print(str(runTime))
     maxProgress = -1
@@ -186,14 +186,13 @@ def updateDisplay(terminal = False):
     if -1 < maxProgress < 100:
         printProgressBar(maxProgress)
         print("--------------------------------------------")
-    for type,value in TEXTLOG:
+    for type,value in TEXTLOG + display.displayLog:
         if type == 1:
             print(value)
         if type == 3:
             print(f"{bcolors.WARNING} Warning: {value} {bcolors.ENDC}")
         if type == 4 and DEBUG:
             print(f"{bcolors.OKBLUE} Debug: {value} {bcolors.ENDC}")
-
 def writeGifFile(listOfImages,numberOfLoops,delay):
     newGif = iio.imopen('sorting.gif', "w", plugin="pillow")
     newGif.write(listOfImages, duration=int(delay), loop=numberOfLoops, optimize=True)
@@ -327,7 +326,7 @@ def createPicturesForOutput(TERMINAL_MODE,counter_for_number_pictures_created,co
                 updateDisplay(TERMINAL_MODE)
                 printL(4,f"Current pic count:{counter_for_number_pictures_created}")
             numbers, redBar1, redBar2, blueBar1, blueBar2 = next(alg_iterator)
-            display.drawInterface(numbers, redBar1, redBar2, blueBar1, blueBar2)
+            display.drawInterface(numbers, redBar1, redBar2, blueBar1, blueBar2,[])
             screenshot = pygame.Surface(OUTPUT_WINDOW_SIZE)
             screenshot.blit(display.screen, (0, 0))
             # Pictures needs to be generated and saved temporarily
@@ -345,9 +344,12 @@ def createPicturesForOutput(TERMINAL_MODE,counter_for_number_pictures_created,co
     except StopIteration:
         # If program stops because end of sorting
         # Create green bars
-        printL(4, f"Current pic count:{counter_for_number_pictures_created}")
-        a_set = set(range(display.numBars))
-        display.drawInterface(numbers, -1, -1, -1, -1, greenRows=a_set)
+        a_set = [k for k in range(0,len(numbers))]
+
+        printL(4,f"Green_rows at end={a_set}")
+        display.drawInterface(numbers, -1, -1, -1, -1, a_set)
+        screenshot = pygame.Surface(OUTPUT_WINDOW_SIZE)
+        screenshot.blit(display.screen, (0, 0))
         # Make sure final frame are saved for slightly longer than the rest
         takePicture(SCREENSHOT_FILENAME, counter_for_number_pictures_created, screenshot)
         counter_for_number_pictures_created += 1
@@ -368,7 +370,6 @@ def createPicturesForOutput(TERMINAL_MODE,counter_for_number_pictures_created,co
 
 
 def main():
-    updateDisplay()
     printL(4,"Function import and program load completed")
 
     #Create display
@@ -394,7 +395,6 @@ def main():
     
     #Create pictures if it does not exists
     createPicturesFolder()
-    
     while running:
         updateDisplay()
         for event in pygame.event.get():
@@ -555,7 +555,7 @@ def analyzeInputsArgs(available_args):
 
 if __name__ == '__main__':
     available_args = ["-f","-d","-s","-include","-l","-v","-a","-bench"]
-    if len(sys.argv) > 1:
+    if len(sys.argv) >= 2:
         if sys.argv[1] == "help" or sys.argv[1] == "HELP" or sys.argv[1] == "Help":
             print("--------------------------------------------------------------")
             print(f"Animation Generator for Sorting Algorithms")
@@ -584,7 +584,7 @@ if __name__ == '__main__':
     #Check if correct software is installed
     #checkVersionOfPYAV()
     #Check for any args in program init
-    if len(sys.argv) > 2:
+    if len(sys.argv) >= 3:
         shell_options = analyzeInputsArgs(available_args)
         # Just to make sure nothing from prev runs is left
         deleteTempFiles()
