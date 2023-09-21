@@ -49,6 +49,12 @@ def createDisplay(showOrHide):
     windowSize = (900, 800)
     #screen = pygame.display.set_mode(windowSize,flags=showOrHide)
 
+def updateGroups():
+    global basicGroup
+    if randint(0,10) == 5:
+        for group in basicGroup.groups:
+            group.update(None)
+
 class Box:
     def __init__(self, rect):
         self.isActive = False
@@ -58,6 +64,8 @@ class Box:
         self.mousePos = pygame.mouse.get_pos()
         self.clicked = pygame.mouse.get_pressed() != (0, 0, 0)
         self.isActive = True if self.rect.collidepoint(self.mousePos) else False
+        updateGroups()
+
 
     def setRect(self,rect):
         self.rect = pygame.Rect(rect)
@@ -89,7 +97,7 @@ class sampleSortAnimation(Box):
         displayValuesInOutput = False
         numBars = len(array)
         pygame.draw.rect(screen,animationColors.background,(self.rect.left,self.rect.y,self.rect.w,self.rect.h))
-        drawBars(array, redBar1, redBar2, blueBar1, blueBar2, displaySize=(self.rect.w,self.rect.h), leftOffset=self.rect.left,topOffset=self.rect.y)
+        drawBars(array, redBar1, redBar2, blueBar1, blueBar2, [],displaySize=(self.rect.w,self.rect.h), leftOffset=self.rect.left,topOffset=self.rect.y)
         numBars = prev_numBars
         displayValuesInOutput = prev_displayValuesInOutput
         return None
@@ -145,26 +153,36 @@ class Group:
         self.counter +=1
         if self.objectFormatting == "Horizontal":
             for element in self.items:
-                if not hasattr(element,"baseWidth"):
+                if not hasattr(element, "baseWidth"):
+                    printToMainLog(4,"b")
                     return
                 if element.baseWidth == None:
+                    printToMainLog(4, "bn")
                     return
-                if not hasattr(element,"myLabel"):
+                if not hasattr(element, "myLabel"):
+                    printToMainLog(4, "m")
                     return
                 if element.myLabel == None:
+                    printToMainLog(4, "mn")
                     return
-                if not hasattr(element,"buttonText"):
+                if not hasattr(element, "buttonText"):
+                    printToMainLog(4, "bt")
                     return
                 if element.buttonText == None:
-                    return
+                    printToMainLog(4, "btn")
+                    element.buttonText = baseFont.render("", True, self.color)
             # Find how far left so that buttons line up well, and text does not wrap over line
             # get starting top point
-            currentLeft = 40 + (self.items[0].myLabel.get_width())
+            printToMainLog(4, f":{self.items[0].baseWidth}")
+            printToMainLog(4, f":{self.items[0].myLabel}")
+            printToMainLog(4, f":{self.items[0].buttonText}")
+            printToMainLog(4, f"-----------------------------------")
+            currentLeft = 20 + self.items[0].myLabel.get_width()/2
             for place, element in enumerate(self.items):
-                element.setRect((currentLeft, self.rect.y, element.baseWidth + element.buttonText.get_width(), element.rect.height))
-                currentLeft += max(element.baseWidth + element.buttonText.get_width(),element.myLabel.get_width()) + 40
+                element.setRect((currentLeft, self.rect.y, element.baseWidth + element.buttonText.get_width(),element.rect.height))
+                currentLeft += max(element.rect.width, element.myLabel.get_width()) + 20
 
-        if self.objectFormatting == "Vertical":
+        elif self.objectFormatting == "Vertical":
             for element in self.items:
                 if not hasattr(element,"baseWidth"):
                     return
@@ -177,7 +195,7 @@ class Group:
                 if not hasattr(element,"buttonText"):
                     return
                 if element.buttonText == None:
-                    return
+                    element.buttonText = baseFont.render("", True, self.color)
             # Find how far left so that buttons line up well, and text does not wrap over line
             # get starting top point
             currentTop = self.rect.y
@@ -187,16 +205,16 @@ class Group:
                 currentTop += element.rect.height + 10
                 # Place all text 10 pix from left, top = 10px + height + 10px
                 # Remember to account for any labels
-
-        return None
+        else:
+            printToMainLog(2,"Fuck!")
 
 
     def draw(self):
+        self.manageSpacing()
         # Guard statement, if neither outline or title requested, then just return
         if self.title == "" and not (self.upper_line or self.lower_line):
             return None
         # Now we know that atleast one time, but maybe twice, these calc will be needed
-        self.manageSpacing()
         #Calculate all positions
         left = min(k.rect.x for k in self.items)
         top = min(k.rect.y for k in self.items)
@@ -236,6 +254,8 @@ class InputBox(Box):
         self.name = name
         self.color = color
         self.myLabel = None
+        self.buttonText = None
+        self.baseWidth = copy(self.rect.width)
         if kwargs.get("side_text"):
             self.render_text_on_side = kwargs.get("side_text")
         else:
@@ -245,7 +265,6 @@ class InputBox(Box):
         label = baseFont.render(self.name, True, self.color)
         self.myLabel = label
         if self.render_text_on_side:
-            #screen.blit(label, (self.rect.x + (self.rect.w - label.get_width()) / 2, self.rect.y - 32))
             screen.blit(label, (self.rect.x - label.get_width()-10, self.rect.y+(self.rect.height/4)))
         else:
             screen.blit(label, (self.rect.x + (self.rect.w - label.get_width()) / 2, self.rect.y - 32))
@@ -374,26 +393,25 @@ class BoxWithText(Box):
                 self.text = self.text1
             self.draw()
 
+def softint(value):
+    try:
+        return int(value)
+    except ValueError:
+        return 0
 
 class TextBox(InputBox):
     def __init__(self, name, color, rect, text='100'):
         super().__init__(name, color, rect)
         self.text = text
+        self.buttonText = None
         #self.draw()  # establish the correct width for initial rendering
-        self.myLabel = None
-        self.myText = None
 
     def draw(self):
         super().draw()
-        if self.name == "Log":
+        if self.text != "":
             displayedText = baseFont.render(self.text, True, self.color)
-            self.myLabel = displayedText
+            self.buttonText = displayedText
             screen.blit(displayedText, (self.rect.x + 10, self.rect.y + 10))
-        else:
-            displayedText = baseFont.render(self.text, True, self.color)
-            self.myText = displayedText
-            screen.blit(displayedText, (self.rect.x + 10, self.rect.y + 10))
-            #self.rect.w = max(myText.get_width() + 20, 50)
 
     def update(self, event):
         super().update()
@@ -403,14 +421,14 @@ class TextBox(InputBox):
             if self.isActive and event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_BACKSPACE:
                     self.text = self.text[:-1]
-                elif event.unicode.isdigit():
+                elif event.unicode.isdigit() and softint(self.text) < 10000:
                     self.text += event.unicode
 
     def get_value(self):
         if self.name == "Loops" and self.text == "Inf":
             return 0
         else:
-            return int(self.text)
+            return softint(self.text)
 
 class SlideBox(InputBox):
     def __init__(self, name, color, rect):
@@ -431,7 +449,6 @@ class SlideBox(InputBox):
         global delay
         super().update()
         previousStart = self.start
-        self.rect.x = sizeBox.rect.x + sizeBox.rect.w + 20
         self.start = self.rect.x + 6
         self.end = self.rect.x + self.rect.w - 6
         self.value += self.start - previousStart
@@ -485,10 +502,6 @@ class ButtonBox(Box):
         self.myFunction = myFunction
 
     def draw(self):
-        if self.myFunction == "start_stop_generation":
-            self.rect.x = loopBox.rect.x + loopBox.rect.w + 20
-        else:
-            self.rect.x = playButton.rect.x + playButton.rect.w + 20
         screen.blit(self.img, (self.rect.x, self.rect.y))
 
     def update(self,event=None):
@@ -514,7 +527,6 @@ class CheckBox(Box):
         self.image2 = img_path2
 
     def draw(self):
-        self.rect.x = playButton.rect.x + playButton.rect.w + 30
         mySurface = baseFont.render(self.myText, True, standard.grey)
         screen.blit(mySurface, (self.rect.x - 20, self.rect.y - 30))
         if self.checked:
@@ -717,15 +729,15 @@ sizeBox = TextBox('Size', standard.grey, (30, 500, 50, 50), '10')
 loopBox = TextBox('Loops', standard.grey, (580, 500, 50, 50), 'Inf')
 delayBox = SlideBox("Delay:" + "100" + "ms", standard.grey, (105, 500, 300, 50))
 algorithmBox = DropdownBox('Algorithm', (410, 500, 140, 50), baseFont, standard.grey, side_text=None)
-playButton = ButtonBox('res/playButton.png', (800, 500, 50, 50))
-stopButton = ButtonBox('res/stopButton.png', (800, 500, 50, 50))
 # Advanced group
 delayX10Box = BoxWithText("Increase delay", (100, 620+50*0, 60, 50), "x10", "x1", delayX10BoxFunction,side_text=True)
 includeSettingsInOutputBox = BoxWithText("GUI in output", (100, 620+50*1, 95, 50), "Include", "Exclude", includeSettingsInOutputBoxFunction,side_text=True)
 showValueInBarsBox = BoxWithText("Display value in bars", (100, 620+50*1, 95, 50), "Include", "Exclude", showValueInBarsBox,side_text=True)
 
-#Has no group, needs to be managed normally
+#Has no group, needs to be managed normally - Some better option needs to be included for these
 outputFormatBox = DropdownBox('Output Format', (650, 650, 220, 50), baseFont, standard.grey,side_text=True)
+playButton = ButtonBox('res/playButton.png', (800, 500, 50, 50))
+stopButton = ButtonBox('res/stopButton.png', (800, 500, 50, 50))
 
 #Color picking - sliders
 P1_colorPickerBox = ColorPicker("Red",(600, 850+30*0, 255, 30),True)
@@ -749,14 +761,15 @@ preview_colors = sampleSortAnimation((600,850+30*4-10,255,90*1.2))
 advancedGroup = Group((100,600,0,50),(True,True,True),title="",objectFormatting="Vertical",a = delayX10Box,b = includeSettingsInOutputBox,c = showValueInBarsBox)
 slidersColorGroup = Group((600,850,255,30),(False,True,False),title = "RGB color selector",objectFormatting="Vertical",a = P1_colorPickerBox,b = P2_colorPickerBox,c = P3_colorPickerBox,d = preview_colors)
 setResetColorGroup = Group((160,820,50,50),(False,True,False), title = "Color for",objectFormatting="Vertical",a = BlueBarsColorBox, b = RedBarsColorBox,c = greenBarsColorBox, d = BaseBarsColorBox, e = textInBarsColorBox, f = backgroundColorBox)
-
+basicGroup = Group((30,500,50,50),(False,False,False),title="",objectFormatting="Horizontal",a = sizeBox,b = loopBox,c = delayBox,d = algorithmBox)
 
 #Add ref to all elements in list.
 ListOfAllGUIElements.extend([sizeBox, loopBox, delayBox, algorithmBox, playButton, stopButton,
                        delayX10Box, includeSettingsInOutputBox, showValueInBarsBox, outputFormatBox,
                        P1_colorPickerBox,P2_colorPickerBox,P3_colorPickerBox,advancedGroup,
                        slidersColorGroup,preview_colors,BlueBarsColorBox,RedBarsColorBox,BaseBarsColorBox,
-                       textInBarsColorBox,backgroundColorBox,setResetColorGroup,greenBarsColorBox])
+                       textInBarsColorBox,backgroundColorBox,setResetColorGroup,greenBarsColorBox,basicGroup])
+
 def updateWidgets(event):
     global ListOfAllGUIElements
     # Instead of looping
@@ -776,19 +789,21 @@ def drawText(myText,myColor,rect):
     screen.blit(label, (rect.x - (label.get_width() / 2), rect.y - 32))
 
 
-def drawBars(array, redBar1, redBar2, blueBar1, blueBar2, greenRows={},displaySize=None, **kwargs):
+def drawBars(array, redBar1, redBar2, blueBar1, blueBar2, greenRows,displaySize=None, **kwargs):
     global displayValuesInOutput
     global windowSize
+    global numBars
     if displaySize is None:
         displaySize = (900,430)
     width,height = displaySize
     '''Draw the bars and control their colors'''
-    if numBars != 0:
-        bar_width = float(width) / numBars
+    numBars = len(array)
+    if len(array) != 0:
+        bar_width = float(width) / len(array)
         ceil_width = ceil(bar_width)
         #ceil_width = bar_width
     #Check for special colors
-    for num in range(0,numBars):
+    for num in range(0,len(array)):
         if num in (redBar1, redBar2):
             color = animationColors.red
         elif num in (blueBar1, blueBar2):
@@ -835,14 +850,14 @@ def draw_polygon_alpha(surface, color, points):
     surface.blit(shape_surf, target_rect)
 
 
-def drawInterface(array, redBar1, redBar2, blueBar1, blueBar2, **kwargs):
+def drawInterface(array, redBar1, redBar2, blueBar1, blueBar2,greenRows, **kwargs):
     '''Draw all the interface'''
     # This if statement gives user option to select background color for animation
     if do_sorting:
         screen.fill(animationColors.background)
     else:
         screen.fill(standard.white)
-    drawBars(array, redBar1, redBar2, blueBar1, blueBar2, **kwargs)
+    drawBars(array, redBar1, redBar2, blueBar1, blueBar2,greenRows, **kwargs)
 
     if (time() - timer_space_bar) < 0.1:
         x, y = (850 / 2), 150
