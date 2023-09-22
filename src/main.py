@@ -326,7 +326,7 @@ def createPicturesForOutput(TERMINAL_MODE,counter_for_number_pictures_created,co
                 updateDisplay(TERMINAL_MODE)
                 printL(4,f"Current pic count:{counter_for_number_pictures_created}")
             numbers, redBar1, redBar2, blueBar1, blueBar2 = next(alg_iterator)
-            display.drawInterface(numbers, redBar1, redBar2, blueBar1, blueBar2,[])
+            display.drawInterface(numbers, redBar1, redBar2, blueBar1, blueBar2,[],displaySize=OUTPUT_WINDOW_SIZE)
             screenshot = pygame.Surface(OUTPUT_WINDOW_SIZE)
             screenshot.blit(display.screen, (0, 0))
             # Pictures needs to be generated and saved temporarily
@@ -347,7 +347,7 @@ def createPicturesForOutput(TERMINAL_MODE,counter_for_number_pictures_created,co
         a_set = [k for k in range(0,len(numbers))]
 
         printL(4,f"Green_rows at end={a_set}")
-        display.drawInterface(numbers, -1, -1, -1, -1, a_set)
+        display.drawInterface(numbers, -1, -1, -1, -1, a_set,displaySize=OUTPUT_WINDOW_SIZE)
         screenshot = pygame.Surface(OUTPUT_WINDOW_SIZE)
         screenshot.blit(display.screen, (0, 0))
         # Make sure final frame are saved for slightly longer than the rest
@@ -388,8 +388,9 @@ def main():
     counter_skipping_images_during_creation = 0
 
     #Used for rendering window
-    OUTPUT_WINDOW_SIZE = (900, 460)
-    
+    w_o, h_o = display.windowSize
+    OUTPUT_WINDOW_SIZE = (w_o, h_o * 0.383333333)
+
     #Just to make sure nothing from prev runs is left
     deleteTempFiles()
     
@@ -451,7 +452,7 @@ def main():
             counter_skipping_images_during_creation = 0
         else: # no animation
             a_set = set(range(display.numBars))
-            display.drawInterface(numbers, -1, -1, -1, -1, greenRows=a_set)
+            display.drawInterface(numbers, -1, -1, -1, -1, greenRows=a_set,displaySize=OUTPUT_WINDOW_SIZE)
 
 def validateInput(type,input):
     if type == "int":
