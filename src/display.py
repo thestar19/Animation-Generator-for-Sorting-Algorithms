@@ -3,6 +3,8 @@ from math import ceil
 from time import time
 from random import randint
 from copy import copy
+from dataclasses import dataclass
+#from sys import open
 
 # Initialize pygame modules
 pygame.init()
@@ -11,13 +13,27 @@ pygame.init()
 #pygame.display.set_caption('Sorting Algorithm Animation Generator')
 pygame.display.set_caption('Animation Generator for Sorting Algorithms')
 
-windowSize = (900*2, 1200*2)
-screen = pygame.display.set_mode(windowSize)
+try:
+    f = open("CUSTOM_RES.txt","r")
+    v = f.readline().split(",")
+    f.close()
+    windowSize = (int(v[1]),int(v[0]))
+except FileNotFoundError:
+    windowSize = (900, 1200)
+
+GUI = None
+#screen = pygame.display.set_mode(windowSize)
 
 # Font
 baseFont = pygame.font.SysFont('Arial', 24)
 smallBaseFont = pygame.font.SysFont('Arial', 14)
-
+screen = None
+def init():
+    global GUI
+    global windowSize
+    global screen
+    screen = pygame.display.set_mode(windowSize)
+    GUI = GUI()
 
 # Used Colors
 class Colors:
@@ -50,9 +66,8 @@ def createDisplay(showOrHide):
     #screen = pygame.display.set_mode(windowSize,flags=showOrHide)
 
 def updateGroups():
-    global basicGroup
     if randint(0,10) == 5:
-        for group in basicGroup.groups:
+        for group in GUI.basicGroup.groups:
             group.update(None)
 
 class Box:
@@ -234,7 +249,7 @@ class Group:
         # So add width of item furthest right, and now we have total width.
         width = max(k.rect.x for k in self.items) - left + self.items[self.find_rightmost()].rect.w
         height = max(k.rect.y for k in self.items) - top + self.items[self.find_lowest()].rect.h
-        offset_height_topside = 40
+        offset_height_topside = 20
         offset_height_underside = 10
         offset_width = 30
         if self.title != "":
@@ -737,65 +752,65 @@ show_advanced = False
 # If nothing should happen when pressing the button, simply do "return None"
 # The function that is passed when creating the button below will be called automatically with itself as an argument
 # Define all rect elements in terms of windowsize percentage
-width,height = windowSize
-ListOfAllGUIElements = []
-# Basic group
-sizeBox = TextBox('Size', standard.grey, (int((30/900)*width), int((500/1200)*height), int((50/900)*width), int((50/1200)*height)), '10')
-loopBox = TextBox('Loops', standard.grey, (int((580/900)*width), int((500/1200)*height), int((50/900)*width), int((50/1200)*height)), 'Inf')
-delayBox = SlideBox("Delay:" + "100" + "ms", standard.grey, (int((105/900)*width), int((500/1200)*height), int((300/900)*width), int((50/1200)*height)))
-algorithmBox = DropdownBox('Algorithm', (int((410/900)*width), int((500/1200)*height), int((140/900)*width), int((50/1200)*height)), baseFont, standard.grey, side_text=None)
-playButton = ButtonBox('res/playButton.png', (int((800/900)*width), int((500/1200)*height), int((50/900)*width), int((50/1200)*height)))
-stopButton = ButtonBox('res/stopButton.png', (int((800/900)*width), int((500/1200)*height), int((50/900)*width), int((50/1200)*height)))
-# Advanced group
-delayX10Box = BoxWithText("Increase delay", (int((100/900)*width), int(((620+50*0)/900)*width), int((60/900)*width), int((50/1200)*height)), "x10", "x1", delayX10BoxFunction,side_text=True)
-includeSettingsInOutputBox = BoxWithText("GUI in output", (int(((100/900)/900)*width), int((620+50*1/1200)*height), int((95/900)*width), int((50/1200)*height)), "Include", "Exclude", includeSettingsInOutputBoxFunction,side_text=True)
-showValueInBarsBox = BoxWithText("Display value in bars", (int(((100/900)/900)*width), int(((620+50*1)/1200)*height), int((95/900)*width), int((50/1200)*height)), "Include", "Exclude", showValueInBarsBox,side_text=True)
-outputFormatBox = DropdownBox('Output Format', (int((650/900)*width), int((650/1200)*height), int((220/900)*width), int((50/1200)*height)), baseFont, standard.grey,side_text=True)
+@dataclass
+class GUI:
+    width,height = windowSize
+    ListOfAllGUIElements = []
+    # Basic group
+    sizeBox = TextBox('Size', standard.grey, (int((30/900)*width), int((500/1200)*height), int((50/900)*width), int((50/1200)*height)), '10')
+    loopBox = TextBox('Loops', standard.grey, (int((580/900)*width), int((500/1200)*height), int((50/900)*width), int((50/1200)*height)), 'Inf')
+    delayBox = SlideBox("Delay:" + "100" + "ms", standard.grey, (int((105/900)*width), int((500/1200)*height), int((300/900)*width), int((50/1200)*height)))
+    algorithmBox = DropdownBox('Algorithm', (int((410/900)*width), int((500/1200)*height), int((140/900)*width), int((50/1200)*height)), baseFont, standard.grey, side_text=None)
+    playButton = ButtonBox('res/playButton.png', (int((800/900)*width), int((500/1200)*height), int((50/900)*width), int((50/1200)*height)))
+    stopButton = ButtonBox('res/stopButton.png', (int((800/900)*width), int((500/1200)*height), int((50/900)*width), int((50/1200)*height)))
+    # Advanced group
+    delayX10Box = BoxWithText("Increase delay", (int((100/900)*width), int(((620+50*0)/900)*width), int((60/900)*width), int((50/1200)*height)), "x10", "x1", delayX10BoxFunction,side_text=True)
+    includeSettingsInOutputBox = BoxWithText("GUI in output", (int(((100/900)/900)*width), int((620+50*1/1200)*height), int((95/900)*width), int((50/1200)*height)), "Include", "Exclude", includeSettingsInOutputBoxFunction,side_text=True)
+    showValueInBarsBox = BoxWithText("Display value in bars", (int(((100/900)/900)*width), int(((620+50*1)/1200)*height), int((95/900)*width), int((50/1200)*height)), "Include", "Exclude", showValueInBarsBox,side_text=True)
+    outputFormatBox = DropdownBox('Output Format', (int((650/900)*width), int((650/1200)*height), int((220/900)*width), int((50/1200)*height)), baseFont, standard.grey,side_text=True)
 
 
-#Color picking - sliders
-P1_colorPickerBox = ColorPicker("Red",(int((600/900)*width), int(((850+30*0)/1200)*height), int((255/900)*width), int((30/1200)*height)),True)
-P2_colorPickerBox = ColorPicker("Blue",(int((600/900)*width), int(((850+30*1)/1200)*height),int( (255/900)*width), int((30/1200)*height)))
-P3_colorPickerBox = ColorPicker("Green",(int((600/900)*width), int(((850+30*2)/1200)*height), int((255/900)*width), int((30/1200)*height)))
-# Color picking - set/reset buttons
-BlueBarsColorBox = BoxWithText("Blue bars",(int((160/900)*width),int(((820+60*0)/1200)*height),int((50/900)*width),int((50/1200)*height)),"Set","Reset",blueBarsColorBoxFunction,side_text=True)
-RedBarsColorBox = BoxWithText("Red bars",(int((160/900)*width),int(((820+60*1)/1200)*height),int((50/900)*width),int((50/1200)*height)),"Set","Reset",redBarsColorBoxFunction,side_text=True)
-greenBarsColorBox = BoxWithText("Green bars",(int((160/900)*width),int(((820+60*2)/1200)*height),int((50/900)*width),int((50/1200)*height)),"Set","Reset",greenBarsColorBoxFunction,side_text=True)
-BaseBarsColorBox = BoxWithText("Normal bars",(int((160/900)*width),int(((820+60*3)/1200)*height),int((50/900)*width),int((50/1200)*height)),"Set","Reset",baseBarsColorBoxFunction,side_text=True)
-textInBarsColorBox = BoxWithText("Text in bars",(int((160/900)*width),int(((820+60*4)/1200)*height),int((50/900)*width),int((50/1200)*height)),"Set","Reset",textInBarsColorBoxFunction,side_text=True)
-backgroundColorBox = BoxWithText("Background",(int((160/900)*width),int(((820+60*5)/1200)*height),int((50/900)*width),int((50/1200)*height)),"Set","Reset",backgroundColorBoxFunction,side_text=True)
-#Sample animation for choosing color - included in slidersColorGroup
-preview_colors = sampleSortAnimation((int((600/900)*width),int(((850+30*4-10)/1200)*height), int((255/900)*width),int(((90*1.2)/1200)*height)))
+    #Color picking - sliders
+    P1_colorPickerBox = ColorPicker("Red",(int((600/900)*width), int(((850+30*0)/1200)*height), int((255/900)*width), int((30/1200)*height)),True)
+    P2_colorPickerBox = ColorPicker("Blue",(int((600/900)*width), int(((850+30*1)/1200)*height),int( (255/900)*width), int((30/1200)*height)))
+    P3_colorPickerBox = ColorPicker("Green",(int((600/900)*width), int(((850+30*2)/1200)*height), int((255/900)*width), int((30/1200)*height)))
+    # Color picking - set/reset buttons
+    BlueBarsColorBox = BoxWithText("Blue bars",(int((160/900)*width),int(((820+60*0)/1200)*height),int((50/900)*width),int((50/1200)*height)),"Set","Reset",blueBarsColorBoxFunction,side_text=True)
+    RedBarsColorBox = BoxWithText("Red bars",(int((160/900)*width),int(((820+60*1)/1200)*height),int((50/900)*width),int((50/1200)*height)),"Set","Reset",redBarsColorBoxFunction,side_text=True)
+    greenBarsColorBox = BoxWithText("Green bars",(int((160/900)*width),int(((820+60*2)/1200)*height),int((50/900)*width),int((50/1200)*height)),"Set","Reset",greenBarsColorBoxFunction,side_text=True)
+    BaseBarsColorBox = BoxWithText("Normal bars",(int((160/900)*width),int(((820+60*3)/1200)*height),int((50/900)*width),int((50/1200)*height)),"Set","Reset",baseBarsColorBoxFunction,side_text=True)
+    textInBarsColorBox = BoxWithText("Text in bars",(int((160/900)*width),int(((820+60*4)/1200)*height),int((50/900)*width),int((50/1200)*height)),"Set","Reset",textInBarsColorBoxFunction,side_text=True)
+    backgroundColorBox = BoxWithText("Background",(int((160/900)*width),int(((820+60*5)/1200)*height),int((50/900)*width),int((50/1200)*height)),"Set","Reset",backgroundColorBoxFunction,side_text=True)
+    #Sample animation for choosing color - included in slidersColorGroup
+    preview_colors = sampleSortAnimation((int((600/900)*width),int(((850+30*4-10)/1200)*height), int((255/900)*width),int(((90*1.2)/1200)*height)))
 
 
-#Groups
-# Very important, objects must be in order!
-# if not, things will not be scaled correctly
-# Outline order is: Render upper line (t/f), Render lower line (t/f), Should line cover entire width of program? (t/f)
-advancedGroup = Group((int((100/900)*width),int((600/1200)*height),int((0/900)*width),int((50/1200)*height)),(True,True,True),title="",objectFormatting="Vertical",item_collisions = [],if_different_offset=outputFormatBox,a = delayX10Box,b = includeSettingsInOutputBox,c = showValueInBarsBox,d=outputFormatBox)
-slidersColorGroup = Group((int((600/900)*width),int((850/1200)*height),int((255/900)*width),int((30/1200)*height)),(False,True,False),title = "RGB color selector",objectFormatting="Vertical",item_collisions = [],if_different_offset=None,a = P1_colorPickerBox,b = P2_colorPickerBox,c = P3_colorPickerBox,d = preview_colors)
-setResetColorGroup = Group((int((160/900)*width),int((820/1200)*height),int((50/900)*width),int((50/1200)*height)),(False,True,False), title = "Color for",objectFormatting="Vertical",item_collisions = [],if_different_offset=None,a = BlueBarsColorBox, b = RedBarsColorBox,c = greenBarsColorBox, d = BaseBarsColorBox, e = textInBarsColorBox, f = backgroundColorBox)
-basicGroup = Group((int((30/900)*width),int((500/1200)*height),int((50/900)*width),int((50/1200)*height)),(False,False,False),title="",objectFormatting="Horizontal",item_collisions = [playButton,stopButton],if_different_offset=None,a = sizeBox,b = loopBox,c = delayBox,d = algorithmBox,e=playButton,f=stopButton)
+    #Groups
+    # Very important, objects must be in order!
+    # if not, things will not be scaled correctly
+    # Outline order is: Render upper line (t/f), Render lower line (t/f), Should line cover entire width of program? (t/f)
+    advancedGroup = Group((int((100/900)*width),int((600/1200)*height),int((0/900)*width),int((50/1200)*height)),(True,True,True),title="",objectFormatting="Vertical",item_collisions = [],if_different_offset=outputFormatBox,a = delayX10Box,b = includeSettingsInOutputBox,c = showValueInBarsBox,d=outputFormatBox)
+    slidersColorGroup = Group((int((600/900)*width),int((850/1200)*height),int((255/900)*width),int((30/1200)*height)),(False,True,False),title = "RGB color selector",objectFormatting="Vertical",item_collisions = [],if_different_offset=None,a = P1_colorPickerBox,b = P2_colorPickerBox,c = P3_colorPickerBox,d = preview_colors)
+    setResetColorGroup = Group((int((160/900)*width),int((820/1200)*height),int((50/900)*width),int((50/1200)*height)),(False,True,False), title = "Color for",objectFormatting="Vertical",item_collisions = [],if_different_offset=None,a = BlueBarsColorBox, b = RedBarsColorBox,c = greenBarsColorBox, d = BaseBarsColorBox, e = textInBarsColorBox, f = backgroundColorBox)
+    basicGroup = Group((int((30/900)*width),int((510/1200)*height),int((50/900)*width),int((50/1200)*height)),(False,False,False),title="",objectFormatting="Horizontal",item_collisions = [playButton,stopButton],if_different_offset=None,a = sizeBox,b = loopBox,c = delayBox,d = algorithmBox,e=playButton,f=stopButton)
 
-#Add ref to all elements in list.
-ListOfAllGUIElements.extend([sizeBox, loopBox, delayBox, algorithmBox, playButton, stopButton,
-                       delayX10Box, includeSettingsInOutputBox, showValueInBarsBox, outputFormatBox,
-                       P1_colorPickerBox,P2_colorPickerBox,P3_colorPickerBox,advancedGroup,
-                       slidersColorGroup,preview_colors,BlueBarsColorBox,RedBarsColorBox,BaseBarsColorBox,
-                       textInBarsColorBox,backgroundColorBox,setResetColorGroup,greenBarsColorBox,basicGroup])
-
+    #Add ref to all elements in list.
+    ListOfAllGUIElements.extend([sizeBox, loopBox, delayBox, algorithmBox, playButton, stopButton,
+                           delayX10Box, includeSettingsInOutputBox, showValueInBarsBox, outputFormatBox,
+                           P1_colorPickerBox,P2_colorPickerBox,P3_colorPickerBox,advancedGroup,
+                           slidersColorGroup,preview_colors,BlueBarsColorBox,RedBarsColorBox,BaseBarsColorBox,
+                           textInBarsColorBox,backgroundColorBox,setResetColorGroup,greenBarsColorBox,basicGroup])
 def updateWidgets(event):
-    global ListOfAllGUIElements
     # Instead of looping
-    for aBox in ListOfAllGUIElements:
+    for aBox in GUI.ListOfAllGUIElements:
         # We have to skip stop & start button bc they are special
         if type(aBox) != ButtonBox:
             aBox.update(event)
     #Stop & start button are specials
     if do_sorting:
-        stopButton.update()
+        GUI.stopButton.update()
     else:
-        playButton.update()
+        GUI.playButton.update()
 
 def drawText(myText,myColor,rect):
     rect = pygame.Rect(rect)
@@ -838,15 +853,14 @@ def drawBars(array, redBar1, redBar2, blueBar1, blueBar2, greenRows,displaySize,
 
 def drawBottomMenu():
     '''Draw the menu below the bars'''
-    global ListOfAllGUIElements
-    for aBox in ListOfAllGUIElements:
+    for aBox in GUI.ListOfAllGUIElements:
         # We have to skip stop & start button bc they are special
         if type(aBox) != ButtonBox:
             aBox.draw()
     if do_sorting:
-        stopButton.draw()
+        GUI.stopButton.draw()
     else:
-        playButton.draw()
+        GUI.playButton.draw()
 
 
 def draw_rect_alpha(surface, color, rect):
