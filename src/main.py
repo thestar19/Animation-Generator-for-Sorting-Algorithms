@@ -389,7 +389,7 @@ def main():
     #Used for rendering window
     # 1/h_o_scaling factor = 2.608 => Ergo, to get output to be 1920x1080, input has to be 1920x(1080*2.608)
     w_o, h_o = display.windowSize
-    OUTPUT_WINDOW_SIZE = (w_o, h_o * 0.383333333 + 1)
+    OUTPUT_WINDOW_SIZE = (w_o, h_o-740)
 
     #Just to make sure nothing from prev runs is left
     deleteTempFiles()
@@ -565,7 +565,7 @@ if __name__ == '__main__':
             print(f"A fork of Sorting Algorithm Visualizer by LucasPilla")
             print(f"A GIF or video can be created either by:")
             print(f"    1) Interacting with the GUI by running python3 src/main.py")
-            print(f"    2) Only using the terminal by providing arguments")
+            print(f"    2) Only using the terminal by providing arguments with flag -t")
             print(f"")
             print(f"Valid inputs for terminal arguments:")
             print(f"    Format: -f => GIF or MP4")
@@ -574,6 +574,7 @@ if __name__ == '__main__':
             print(f"    Include numbers in bars in output: -include => true/false")
             print(f"    Number of loops (GIF ONLY): -l => 0(inf)-9999")
             print(f"    Output debug info (verbose): -v => true/false")
+            print(f"    Use in terminal mode: -t => true/false")
             print(f"    Reserved use for benchmark: -bench => true/false")
             print(f"        -bench has other req, may not work without benchmark.py")
             print(f"")
@@ -592,21 +593,21 @@ if __name__ == '__main__':
             value = sys.argv[pos_arg+1]
             try:
                 custom_display_res = value.split("x")
-                print(custom_display_res)
+                printL(4,f"Req custom display:{custom_display_res}")
             except Exception as e:
                 print(f"Got arg -custom_res, but value was incorrectly formatted")
                 print(f"Exception:{e}")
                 print(f"This is a beta feature, and may therefore be unstable")
                 print(f"Ending program")
                 sys.exit(0)
-        if sys.argv[1] == "-v" or sys.argv[1] == "-V":
+        if "-V" in sys.argv or "-V" in sys.argv:
             printL(4,"Debug enabled")
             DEBUG = True
     #Check if correct software is installed
     #checkVersionOfPYAV()
     #Check for any args in program init
     if len(sys.argv) > 2:
-        if len(sys.argv) > 3 or sys.argv[1] == "-bench":
+        if sys.argv[1] == "-t":
             shell_options = analyzeInputsArgs(available_args)
             # Just to make sure nothing from prev runs is left
             deleteTempFiles()
@@ -619,12 +620,13 @@ if __name__ == '__main__':
             putenv('SDL_VIDEODRIVER', 'fbcon')
             environ["SDL_VIDEODRIVER"] = "dummy"
             import display as display
+            display.init()
             numbers = [randint(10, 400) for i in range(shell_options.output_size)]  # random list to be sorted
             alg_iterator = algorithmsDict[shell_options.output_alg](numbers, 0, shell_options.output_size - 1)  # initialize iterator
             #Okay so, for the display module to work this has to be set.
             # So honestly, instead of doing extra work this should be solved some other way.
-            display.algorithmBox.add_options(list(algorithmsDict.keys()))
-            display.outputFormatBox.add_options(CURRENT_OUTPUT_FORMATS)
+            display.GUI.algorithmBox.add_options(list(algorithmsDict.keys()))
+            display.GUI.outputFormatBox.add_options(CURRENT_OUTPUT_FORMATS)
             display.numBars = shell_options.output_size
             counter_for_number_pictures_created,_ = createPicturesForOutput(True,0,0,numbers,alg_iterator,(900, 400))
             if shell_options.output_format == "GIF":
