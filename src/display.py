@@ -228,7 +228,7 @@ class Group:
             currentLeft = 40 + max(k.myLabel.get_width() for k in self.items)
             for place, element in enumerate(self.items):
                 if element == self.nextRow:
-                    element.setRect((currentLeft*2+(windowSize[0]*(200/900)), self.rect.y+(windowSize[1]*(50/900)), element.baseWidth + try_get_width(element.buttonText), element.rect.height))
+                    element.setRect((currentLeft*2+(windowSize[0]*(100/900)), self.rect.y+(windowSize[1]*(30/900)), element.baseWidth + try_get_width(element.buttonText), element.rect.height))
                 else:
                     element.setRect((currentLeft, currentTop, element.baseWidth + element.buttonText.get_width(), element.rect.height))
                 currentTop += element.rect.height + (windowSize[1]*(10/900))
@@ -361,19 +361,76 @@ class ColorPicker(InputBox):
         self.draw()
 
 class justText(Box):
-    def __init__(self, text, color,rect):
+    def __init__(self, text, color,rect,**kwargs):
         super().__init__(rect)
         self.text = text
         self.color = color
         self.myLabel = None
+        self.mySize = 0
+        self.myAlg = None
+        if kwargs.get("side_text"):
+            self.side_text = True
+        else:
+            self.side_text = False
+        self.totalFile = []
 
-    def update(self):
-        return None
+
+    def searchInFile(self,size,alg):
+        #Check if list was already read
+        # Saving list in memory saves much execution time, and the list is not that long (less than 200 lines of maybe 50chars each right now)
+        # In the future, more lines can be added to support more predictions.
+        # However, as it stands, generating the table takes like 20 min on a fairly fast machine, if it does any decent avg for each result.
+        if len(self.totalFile) > 0:
+            # Setting output as > 5000 means that program will display (unknown) upon failure
+            resulting_number_of_frames = 5002
+            lastFactor = 1000
+            for line in self.totalFile:
+                line_alg = line[0].split("=")[1]
+                line_size = int(line[1].split("=")[1])
+                line_result = float(line[2].split("=")[1])
+                # if guess is close AND right alg AND new guess is closer than last
+                myFactor = size/line_size
+                if (alg == line_alg) and (size*0.5 <= line_size <= size * 4) and abs(1-(size/line_size)) < lastFactor:
+                    resulting_number_of_frames = line_result * (size/line_size)
+                    lastFactor = abs(1-(size/line_size))
+                    # Don't break because if we find better than we want to take it
+            return resulting_number_of_frames
+        else:
+            # No text in memory, so do all the stuff and then
+            f = open(ANIMATION_TABLE_TIME_ESTIMATE, "r")
+            for line in (line.split(",") for line in f.readlines()):
+                self.totalFile.append(line)
+            f.close()
+            # Just run myself again
+            # Next time, totalfile will be longer than 0 so code above will run.
+            # This reduces risk for mistakes because code is not replicated in multiple places
+            return self.searchInFile(size,alg)
+
+    def update(self,event):
+        if "Estimated playtime for animation" in self.text:
+            # Get value for delay, size, format, alg
+            # Check how many frames that usually generates
+            size = GUI.sizeBox.get_value()
+            alg = GUI.algorithmBox.get_active_option()
+            if self.mySize == size and self.myAlg == alg:
+                return None
+            resulting_number_of_frames = self.searchInFile(size,alg)
+
+            if resulting_number_of_frames > 5000:
+                self.text = f"Estimated playtime for animation: (unknown) sec"
+            else:
+                self.text = f"Estimated playtime for animation: {round((float((delay * 30) / 1000) * resulting_number_of_frames) / 32,3)} sec"
+            self.draw()
 
     def draw(self):
-        label = baseFont.render(self.text, True, self.color)
-        self.myLabel = label
-        screen.blit(label, (self.rect.x + (self.rect.w - label.get_width()) / 2, self.rect.y - 32))
+        if self.side_text:
+            label = baseFont.render(self.text, True, self.color)
+            self.myLabel = label
+            screen.blit(label, (self.rect.x - label.get_width()-10, self.rect.y+(self.rect.height/4)))
+        else:
+            label = baseFont.render(self.text, True, self.color)
+            self.myLabel = label
+            screen.blit(label, (self.rect.x + (self.rect.w - label.get_width()) / 2, self.rect.y - 32))
 
 
 class BoxWithText(Box):
@@ -482,8 +539,8 @@ class SlideBox(InputBox):
         self.end = self.rect.x + self.rect.w - 6
         self.value += self.start - previousStart
         if "Delay" in self.name:
-            delay = ((self.value-self.start) * someFactor)
-            self.name = "Delay:" + str(round((self.value-self.start) * someFactor,5)) + "ms"
+            delay = ((self.value-self.start) * someFactor)+1
+            self.name = "Delay:" + str(round((self.value-self.start) * someFactor,5)+1) + "ms"
         super().update()
         if self.isActive:
             if self.clicked:
@@ -735,6 +792,7 @@ includeSettingsInOutput = False
 displayValuesInOutput = False
 delay = 100
 show_advanced = False
+ANIMATION_TABLE_TIME_ESTIMATE = "animationTimeEstimate.txt"
 
 # Input Boxes
 # To add new box, simply add one line below and then add ref to ListOfAllBoxes append call below
@@ -751,7 +809,7 @@ class GUI:
     width,height = windowSize
     ListOfAllGUIElements = []
     # Basic group
-    sizeBox = TextBox('Size', standard.grey, (int((30/900)*width), int((500/1200)*height), 50, 50), '10')
+    sizeBox = TextBox('Size', standard.grey, (int((30/900)*width), int((500/1200)*height), 50, 50), '20')
     loopBox = TextBox('Loops', standard.grey, (int((580/900)*width), int((500/1200)*height), 50, 50), 'Inf')
     delayBox = SlideBox("Delay:" + "100" + "ms", standard.grey, (int((105/900)*width), int((500/1200)*height), 300, 50))
     algorithmBox = DropdownBox('Algorithm', (int((410/900)*width), int((500/1200)*height), 140, 50), baseFont, standard.grey, side_text=None)
@@ -761,7 +819,7 @@ class GUI:
     delayX10Box = BoxWithText("Increase delay", (int((100/900)*width), int(((620+50*0)/900)*width), 60, 50), "x10", "x1", delayX10BoxFunction,side_text=True)
     includeSettingsInOutputBox = BoxWithText("GUI in output", (int(((100/900)/900)*width), int((620+50*1/1200)*height), 95, 50), "Include", "Exclude", includeSettingsInOutputBoxFunction,side_text=True)
     showValueInBarsBox = BoxWithText("Display value in bars", (int(((100/900)/900)*width), int(((620+50*1)/1200)*height), 95, 50), "Include", "Exclude", showValueInBarsBox,side_text=True)
-    outputFormatBox = DropdownBox('Output Format', (int((650/900)*width), int((650/1200)*height), 140, 50), baseFont, standard.grey,side_text=True)
+    outputFormatBox = DropdownBox('Output Format', (int((800/900)*width), int((500/1200)*height), 140, 50), baseFont, standard.grey,side_text=True)
 
 
     #Color picking - sliders
@@ -778,6 +836,8 @@ class GUI:
     #Sample animation for choosing color - included in slidersColorGroup
     preview_colors = sampleSortAnimation((int((600/900)*width),int(((850+30*4-10)/1200)*height), 255,90))
 
+    # Text data group - only exists for displaying data
+    estimatedAnimationTimeBox = justText(f"Estimated playtime for animation: sec",standard.grey,(int((550/900)*width), int((1100/1200)*height), 140, 50))
 
     #Groups
     # Very important, objects must be in order!
@@ -787,13 +847,15 @@ class GUI:
     slidersColorGroup = Group((int((600/900)*width),int((850/1200)*height),int((255/900)*width),int((30/1200)*height)),(False,True,False),title = "RGB color selector",objectFormatting="Vertical",item_collisions = [],if_different_offset=None,a = P1_colorPickerBox,b = P2_colorPickerBox,c = P3_colorPickerBox,d = preview_colors)
     setResetColorGroup = Group((int((160/900)*width),int((820/1200)*height),int((50/900)*width),int((50/1200)*height)),(False,True,False), title = "Color for",objectFormatting="Vertical",item_collisions = [],if_different_offset=None,a = BlueBarsColorBox, b = RedBarsColorBox,c = greenBarsColorBox, d = BaseBarsColorBox, e = textInBarsColorBox, f = backgroundColorBox)
     basicGroup = Group((int((30/900)*width),int((510/1200)*height),int((50/900)*width),int((50/1200)*height)),(False,False,False),title="",objectFormatting="Horizontal",item_collisions = [playButton,stopButton],if_different_offset=None,a = sizeBox,b = loopBox,c = delayBox,d = algorithmBox,e=playButton,f=stopButton)
+    textDataGroup = Group((int((550/900)*width),int((1100/1200)*height),int((140/900)*width),int((50/1200)*height)),(False,True,False),title="",objectFormatting="Vertical",item_collisions = [],if_different_offset=None,a = estimatedAnimationTimeBox)
+
 
     #Add ref to all elements in list.
     ListOfAllGUIElements.extend([sizeBox, loopBox, delayBox, algorithmBox, playButton, stopButton,
                            delayX10Box, includeSettingsInOutputBox, showValueInBarsBox, outputFormatBox,
                            P1_colorPickerBox,P2_colorPickerBox,P3_colorPickerBox,advancedGroup,
                            slidersColorGroup,preview_colors,BlueBarsColorBox,RedBarsColorBox,BaseBarsColorBox,
-                           textInBarsColorBox,backgroundColorBox,setResetColorGroup,greenBarsColorBox,basicGroup])
+                           textInBarsColorBox,backgroundColorBox,setResetColorGroup,greenBarsColorBox,basicGroup,estimatedAnimationTimeBox])
 def updateWidgets(event):
     # Instead of looping
     for aBox in GUI.ListOfAllGUIElements:
