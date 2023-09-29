@@ -477,14 +477,14 @@ class SlideBox(InputBox):
     def update(self, event):
         global someFactor
         global delay
-        super().update()
         previousStart = self.start
         self.start = self.rect.x + 6
         self.end = self.rect.x + self.rect.w - 6
         self.value += self.start - previousStart
         if "Delay" in self.name:
-            delay = ((self.value-self.start) * someFactor)+1
-            self.name = "Delay:" + str(((self.value-self.start) * someFactor)+1) + "ms"
+            delay = ((self.value-self.start) * someFactor)
+            self.name = "Delay:" + str(round((self.value-self.start) * someFactor,5)) + "ms"
+        super().update()
         if self.isActive:
             if self.clicked:
                 if self.start <= self.mousePos[0] <= self.end: self.value = self.mousePos[0]
@@ -646,7 +646,7 @@ class DropdownBox(InputBox):
                 self.active_option = i
 
         if pygame.mouse.get_pressed() != (0, 0, 0):
-            printToMainLog(4, f"Rect:{self.rect}, Mouse:{mouse_position},Collides:{self.dropdown_rect.collidepoint(mouse_position)},isActive:{self.isActive}")
+            #printToMainLog(4, f"Rect:{self.rect}, Mouse:{mouse_position},Collides:{self.dropdown_rect.collidepoint(mouse_position)},isActive:{self.isActive}")
             if self.dropdown_rect.collidepoint(mouse_position):
                 self.options[self.DEFAUTL_OPTION], self.options[self.active_option + 1] = \
                     self.options[self.active_option + 1], self.options[self.DEFAUTL_OPTION]

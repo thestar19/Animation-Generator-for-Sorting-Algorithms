@@ -246,24 +246,40 @@ def createMP4(numberOfPictures,SCREENSHOT_FILENAME,delay,terminal=False):
     for i in range(0,numberOfPictures):
         fileNames.append(f"{SCREENSHOT_FILENAME}{str(i)}.jpg")
     deleteExistingFile("sorting.mp4")
+    howManyExtraFrames = float((delay * 30) / 1000)  # Formula to get number of repeat images for delay
     printL(1, f"Adding {str(delay)} ms delay for each image in MP4")
     printL(4, "Accurate MP4 settings is applied \n Therefore every frame from animation will be in MP4.")
     printL(4, "This increases time to generate, but also more accurately displays how sorting function works.")
     printL(4, f"Total number of recorded images: {str(len(fileNames))}")
     printL(4,f"Ignoring looping options because MP4 format does not support")
+    printL(1, f"Estimated total runtime of resulting animation:{round((howManyExtraFrames * len(fileNames))/32,3)} seconds")
     updateDisplay(terminal)
     with iio.imopen("sorting.mp4","w",plugin="pyav") as newVideo:
         newVideo.init_video_stream("mpeg4",fps=30)
-        frameCounter = int((delay * 30)/1000) #Formula to get number of repeat images for delay
-        if frameCounter < 1:
-            frameCounter = 1
+        if howManyExtraFrames < 0.8:
+            printL(3, f"Warning, FPS = 30 & Delay = {delay} means that certain frames will be skipped")
+        skipFrameCounter = 0
         for (counter, filename) in enumerate(fileNames):
-            if counter % 500 == 458 or numberOfPictures < 50:
+            if counter % 500 == 217 or numberOfPictures < 50:
                 updateDisplay(terminal)
                 printProgress(int(((counter) / len(fileNames)) * 100))
-            aFrame = iio.imread(filename) #So we don't read it more than once
-            for _ in range(frameCounter):
+                collect()
+            if howManyExtraFrames < 0.8:
+                if skipFrameCounter > 1:
+                    aFrame = iio.imread(filename)
+                    newVideo.write_frame(aFrame)
+                    del(aFrame)
+                    skipFrameCounter = 0
+                else:
+                    skipFrameCounter += howManyExtraFrames
+            else:
+                if howManyExtraFrames < 1:
+                    howManyExtraFrames = 1
+                aFrame = iio.imread(filename)  # So we don't read it more than once
+                for _ in range(howManyExtraFrames):
+                    newVideo.write_frame(aFrame)
                 newVideo.write_frame(aFrame)
+                del(aFrame)
     printL(1, "Writing MP4 to disk")
     printProgress(100)
     updateDisplay(terminal)
