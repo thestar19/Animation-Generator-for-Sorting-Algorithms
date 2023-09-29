@@ -359,8 +359,8 @@ def createPicturesForOutput(TERMINAL_MODE,counter_for_number_pictures_created,co
         counter_for_number_pictures_created += 1
         printL(4, f"Current pic count:{counter_for_number_pictures_created}")
         if not TERMINAL_MODE:
-            if display.outputFormatBox.get_active_option() == "GIF":
-                createGIF(counter_for_number_pictures_created, SCREENSHOT_FILENAME, int(display.delay), int(display.loopBox.get_value()))
+            if display.GUI.outputFormatBox.get_active_option() == "GIF":
+                createGIF(counter_for_number_pictures_created, SCREENSHOT_FILENAME, int(display.delay), int(display.GUI.loopBox.get_value()))
             else:
                 createMP4(counter_for_number_pictures_created, SCREENSHOT_FILENAME, int(display.delay))
         # Turn off sorting
@@ -372,14 +372,13 @@ def createPicturesForOutput(TERMINAL_MODE,counter_for_number_pictures_created,co
 def main():
     printL(4,"Function import and program load completed")
 
-    #Create display
-    display.createDisplay(pygame.SHOWN)
-
+    #Init display
+    display.init()
     #Init numbers and other important vars
     numbers = []
     running = True
-    display.algorithmBox.add_options(list(algorithmsDict.keys()))
-    display.outputFormatBox.add_options(CURRENT_OUTPUT_FORMATS)
+    display.GUI.algorithmBox.add_options(list(algorithmsDict.keys()))
+    display.GUI.outputFormatBox.add_options(CURRENT_OUTPUT_FORMATS)
 
     alg_iterator = None
     
@@ -388,8 +387,9 @@ def main():
     counter_skipping_images_during_creation = 0
 
     #Used for rendering window
+    # 1/h_o_scaling factor = 2.608 => Ergo, to get output to be 1920x1080, input has to be 1920x(1080*2.608)
     w_o, h_o = display.windowSize
-    OUTPUT_WINDOW_SIZE = (w_o, h_o * 0.383333333)
+    OUTPUT_WINDOW_SIZE = (w_o, h_o-740)
 
     #Just to make sure nothing from prev runs is left
     deleteTempFiles()
@@ -403,13 +403,13 @@ def main():
                 running = False
             display.updateWidgets(event)
 
-        if display.playButton.isActive: # play button clicked
+        if display.GUI.playButton.isActive: # play button clicked
             try:
-                if int(display.sizeBox.text) > 1000 or \
-                        (display.displayValuesInOutput and int(display.sizeBox.text) > 49) or \
-                        (display.loopBox.get_value() > 9999) or \
-                        (display.loopBox.get_value() == "") or \
-                        (display.sizeBox.text == ""):
+                if int(display.GUI.sizeBox.text) > 1000 or \
+                        (display.displayValuesInOutput and int(display.GUI.sizeBox.text) > 49) or \
+                        (display.GUI.loopBox.get_value() > 9999) or \
+                        (display.GUI.loopBox.get_value() == "") or \
+                        (display.GUI.sizeBox.text == ""):
                     # This is limitation because of RAM. size = 100 needs 2GB of RAM, so 120 is for some reason significantly higher
                     printL(3,("Halting output creation"))
                     printLimitations(3)
@@ -419,20 +419,20 @@ def main():
                     counter_for_number_pictures_created = 0
                     counter_skipping_images_during_creation = 0
                     display.do_sorting = True
-                    display.playButton.isActive = False
-                    current_alg = display.algorithmBox.get_active_option()
-                    display.numBars = int(display.sizeBox.text)
+                    display.GUI.playButton.isActive = False
+                    current_alg = display.GUI.algorithmBox.get_active_option()
+                    display.numBars = int(display.GUI.sizeBox.text)
                     if display.numBars > 20 and display.displayValuesInOutput:
                         printL(3,"Will not render values in bars because number of bars > 20")
                     numbers = [randint(10, 400) for i in range(display.numBars)]  # random list to be sorted
                     alg_iterator = algorithmsDict[current_alg](numbers, 0, display.numBars - 1)  # initialize iterator
-                display.playButton.isActive = False
+                display.GUI.playButton.isActive = False
             except ValueError:
                 printL(4,"Text in size field is not a number")
 
-        if display.stopButton.isActive: # stop button clicked
+        if display.GUI.stopButton.isActive: # stop button clicked
             printL(1,("Stopping animation"))
-            display.stopButton.isActive = False
+            display.GUI.stopButton.isActive = False
             display.do_sorting = False
             try: # deplete generator to display sorted numbers
                 while True:
@@ -555,7 +555,8 @@ def analyzeInputsArgs(available_args):
 
 
 if __name__ == '__main__':
-    available_args = ["-f","-d","-s","-include","-l","-v","-a","-bench"]
+    available_args = ["-f","-d","-s","-include","-l","-v","-a","-bench","-custom_res","-t"]
+    custom_display_res = []
     if len(sys.argv) >= 2:
         if sys.argv[1] == "help" or sys.argv[1] == "HELP" or sys.argv[1] == "Help":
             print("--------------------------------------------------------------")
@@ -564,7 +565,7 @@ if __name__ == '__main__':
             print(f"A fork of Sorting Algorithm Visualizer by LucasPilla")
             print(f"A GIF or video can be created either by:")
             print(f"    1) Interacting with the GUI by running python3 src/main.py")
-            print(f"    2) Only using the terminal by providing arguments")
+            print(f"    2) Only using the terminal by providing arguments with flag -t")
             print(f"")
             print(f"Valid inputs for terminal arguments:")
             print(f"    Format: -f => GIF or MP4")
@@ -573,55 +574,84 @@ if __name__ == '__main__':
             print(f"    Include numbers in bars in output: -include => true/false")
             print(f"    Number of loops (GIF ONLY): -l => 0(inf)-9999")
             print(f"    Output debug info (verbose): -v => true/false")
+            print(f"    Use in terminal mode: -t => true/false")
             print(f"    Reserved use for benchmark: -bench => true/false")
+            print(f"        -bench has other req, may not work without benchmark.py")
+            print(f"")
+            print(f"    Custom resolution[BETA,MAY BE UNSTABLE, ONLY WORKS IN GUI MODE]:")
+            print(f"         -custom_res => WidthxHeight where width & height are ints")
+            print(f"         Eg, for output to be 1920x1080, add: -custom_res 1920x1080")
             print(f"")
             print(f"Available sorting algorithms:{list(algorithmsDict.keys())}")
             print(f"Available args:{available_args}")
             print("--------------------------------------------------------------")
             sys.exit(0)
-        if sys.argv[1] == "-v" or sys.argv[1] == "-V":
+        if "-custom_res" in sys.argv:
+            pos_arg = sys.argv.index("-custom_res")
+            value = sys.argv[pos_arg+1]
+            try:
+                custom_display_res = value.split("x")
+                printL(4,f"Req custom display:{custom_display_res}")
+            except Exception as e:
+                print(f"Got arg -custom_res, but value was incorrectly formatted")
+                print(f"Exception:{e}")
+                print(f"This is a beta feature, and may therefore be unstable")
+                print(f"Ending program")
+                sys.exit(0)
+        if "-V" in sys.argv or "-V" in sys.argv:
             printL(4,"Debug enabled")
             DEBUG = True
     #Check if correct software is installed
     #checkVersionOfPYAV()
     #Check for any args in program init
-    if len(sys.argv) >= 3:
-        shell_options = analyzeInputsArgs(available_args)
-        # Just to make sure nothing from prev runs is left
-        deleteTempFiles()
-        # Create pictures if it does not exists
-        createPicturesFolder()
-        #Okay, so get this.
-        # If I import display before this, the window will render
-        # If I first do putenv & environ crap, then no window.
-        # For terminal mode, having no display thing pop up is a good feature.
-        putenv('SDL_VIDEODRIVER', 'fbcon')
-        environ["SDL_VIDEODRIVER"] = "dummy"
-        import display as display
-        numbers = [randint(10, 400) for i in range(shell_options.output_size)]  # random list to be sorted
-        alg_iterator = algorithmsDict[shell_options.output_alg](numbers, 0, shell_options.output_size - 1)  # initialize iterator
-
-        #Okay so, for the display module to work this has to be set.
-        # So honestly, instead of doing extra work this should be solved some other way.
-        display.algorithmBox.add_options(list(algorithmsDict.keys()))
-        display.outputFormatBox.add_options(CURRENT_OUTPUT_FORMATS)
-        display.numBars = shell_options.output_size
-        counter_for_number_pictures_created,_ = createPicturesForOutput(True,0,0,numbers,alg_iterator,(900, 400))
-        if shell_options.output_format == "GIF":
-            createGIF(counter_for_number_pictures_created,SCREENSHOT_FILENAME,shell_options.output_delay,shell_options.output_loops,True)
-        else:
-            createMP4(counter_for_number_pictures_created,SCREENSHOT_FILENAME,shell_options.output_delay,True)
-        if shell_options.benchmark:
-            deleteExistingFile(BENCHMARK_TEXT_FILE)
-            f = open(BENCHMARK_TEXT_FILE,"w+")
-            f.write(f"pictures={counter_for_number_pictures_created}")
-            f.close()
-        print("Output generation finished!")
-        sys.exit()
-        #all_args = sys.argv.split[]
+    if len(sys.argv) > 2:
+        if sys.argv[1] == "-t":
+            shell_options = analyzeInputsArgs(available_args)
+            # Just to make sure nothing from prev runs is left
+            deleteTempFiles()
+            # Create pictures if it does not exists
+            createPicturesFolder()
+            #Okay, so get this.
+            # If I import display before this, the window will render
+            # If I first do putenv & environ crap, then no window.
+            # For terminal mode, having no display thing pop up is a good feature.
+            putenv('SDL_VIDEODRIVER', 'fbcon')
+            environ["SDL_VIDEODRIVER"] = "dummy"
+            import display as display
+            display.init()
+            numbers = [randint(10, 400) for i in range(shell_options.output_size)]  # random list to be sorted
+            alg_iterator = algorithmsDict[shell_options.output_alg](numbers, 0, shell_options.output_size - 1)  # initialize iterator
+            #Okay so, for the display module to work this has to be set.
+            # So honestly, instead of doing extra work this should be solved some other way.
+            display.GUI.algorithmBox.add_options(list(algorithmsDict.keys()))
+            display.GUI.outputFormatBox.add_options(CURRENT_OUTPUT_FORMATS)
+            display.numBars = shell_options.output_size
+            counter_for_number_pictures_created,_ = createPicturesForOutput(True,0,0,numbers,alg_iterator,(900, 400))
+            if shell_options.output_format == "GIF":
+                createGIF(counter_for_number_pictures_created,SCREENSHOT_FILENAME,shell_options.output_delay,shell_options.output_loops,True)
+            else:
+                createMP4(counter_for_number_pictures_created,SCREENSHOT_FILENAME,shell_options.output_delay,True)
+            if shell_options.benchmark:
+                deleteExistingFile(BENCHMARK_TEXT_FILE)
+                f = open(BENCHMARK_TEXT_FILE,"w+")
+                f.write(f"pictures={counter_for_number_pictures_created}")
+                f.close()
+            print("Output generation finished!")
+            sys.exit()
+            #all_args = sys.argv.split[]
     # Yes, this is a really wierd place to import stuff
     # But this is needed for current version of program
+    # This sets a custom resolution
+    # Only way I found is via txt files.
+    if len(custom_display_res) != 0:
+        f = open("CUSTOM_RES.txt","w+")
+        f.write(custom_display_res[1])
+        f.write(",")
+        f.write(custom_display_res[0])
+        f.close()
     import display as display
+    if len(custom_display_res) != 0:
+        remove("CUSTOM_RES.txt")
     main()
 
 
