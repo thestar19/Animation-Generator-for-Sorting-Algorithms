@@ -1,8 +1,10 @@
 # Animation-Generator-for-Sorting-Algorithms
-Program made with Python and Pygame module for generating animations of how sorting algorithms function.\
+Program made with Python and Pygame for generating animations of how sorting algorithms function.
 Supports over 26 different algorithms eg: Bubblesort, Quicksort, Selectionsort, Mergesort, Radixsort.
+Also supports displaying numbers for each bar in the animation, settings custom colors for each aspect of the animation.
+A Beta feature exists that allows custom output resolutions (Normally 900x400, but 1920x1080 has been tested)
 
-Originally created by LucasPilla, this is a fork of his project "Sorting Algorithms Visualizer" that instead generates files of sorting animations. Additional options are implemented to create better videos or GIFs.
+Originally created by LucasPilla, this is a fork of his project "Sorting Algorithms Visualizer" that instead generates files of sorting animations.
 
 Original project: https://github.com/LucasPilla/Sorting-Algorithms-Visualizer
 
@@ -10,12 +12,12 @@ Original project: https://github.com/LucasPilla/Sorting-Algorithms-Visualizer
 Support this project by leaving a :star:
 
 ## Program preview
-<img src="res/sorting_thumbnail.gif" alt="Program preview" width="450" height=400>
+<img src="res/sorting_thumbnail.gif" alt="Program preview" width="450" height=600>
 
-<img src="res/terminal_view.png" alt="Terminal preview" width="520" height=225>
+<img src="res/terminal_view.png" alt="Terminal preview" width="520" height=324>
 
 ## Contribute
-Contributions are welcome. This project is still very new so much work is needed.
+Contributions are welcome.
 :exclamation: Feel free to open an issue if you have some problem :exclamation:
 
 ## Using the application
@@ -25,7 +27,7 @@ Contributions are welcome. This project is still very new so much work is needed
 - Extract content
 - Run main.exe
   
-Some features may not yet be implemented in the Windows version (eg terminal mode and benchmark), and not much testing has been done.
+Some features may not yet be implemented in the Windows version (eg terminal mode, special colors and benchmark).
 Further, it is also possible to run the program in python3 in Windows without the zip file by modifying the code.
 
 
@@ -35,7 +37,7 @@ Only tested in Ubuntu x64 22.04.1-desktop
 - Install requirements: `pip3 install -r requirements.txt`
 - Run: `python3 src/main.py`
 ### Verbose mode
-- To output extra info, run `python3 src/main.py -v`
+- To output extra info, run `python3 src/main.py -V`
 - To see further information about the program, run `python3 src/main.py help`
 ### Terminal mode
 To generate an animation without interacting with the program's graphical interface:
@@ -43,6 +45,11 @@ To generate an animation without interacting with the program's graphical interf
   
 This will create a GIF in the main folder depicting the algorithm Quicksort sorting an array of 50 elements with a delay for each pic of 50ms and infinite looping.\
 To see all options, run `python3 src/main.py help`
+
+### Custom output resolution (Beta, may not be stable)
+To determine the resolution of the resulting animation, use flag -custom_res followed by wanted resolution, eg 1920x1080 for HD.
+- Run `python3 src/main.py -custom_res 1920x1080`
+
 ### Benchmark
 To better optimize the program & to enable features such as "estimated time for creation", a benchmark exists.
 You can contribute too:
