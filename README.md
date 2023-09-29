@@ -1,8 +1,8 @@
 # Animation-Generator-for-Sorting-Algorithms
 Program made with Python and Pygame for generating animations of how sorting algorithms function.
 Supports over 26 different algorithms eg: Bubblesort, Quicksort, Selectionsort, Mergesort, Radixsort.
-Also supports displaying numbers for each bar in the animation, settings custom colors for each aspect of the animation.
-A Beta feature exists that allows custom output resolutions (Normally 900x400, but 1920x1080 has been tested)
+Further, this version supports displaying numbers for each bar in the animation and settings custom colors for each aspect of the animation.
+A Beta feature also exists that allows custom output resolutions (Normally 900x400, but 1920x1080 has been tested)
 
 Originally created by LucasPilla, this is a fork of his project "Sorting Algorithms Visualizer" that instead generates files of sorting animations.
 
