@@ -555,7 +555,7 @@ def analyzeInputsArgs(available_args):
 
 
 if __name__ == '__main__':
-    available_args = ["-f","-d","-s","-include","-l","-v","-a","-bench","-custom_res"]
+    available_args = ["-f","-d","-s","-include","-l","-v","-a","-bench","-custom_res","-t"]
     custom_display_res = []
     if len(sys.argv) >= 2:
         if sys.argv[1] == "help" or sys.argv[1] == "HELP" or sys.argv[1] == "Help":
@@ -579,10 +579,8 @@ if __name__ == '__main__':
             print(f"        -bench has other req, may not work without benchmark.py")
             print(f"")
             print(f"    Custom resolution[BETA,MAY BE UNSTABLE, ONLY WORKS IN GUI MODE]:")
-            print(f"         -custom_res => width,height where width & height are ints")
-            print(f"         To find correct input height for a given output height")
-            print(f"         calc wanted_height * 2.60869")
-            print(f"         So for 1920x1080 output, do 1080*2.608 => 1920x2817")
+            print(f"         -custom_res => WidthxHeight where width & height are ints")
+            print(f"         Eg, for output to be 1920x1080, add: -custom_res 1920x1080")
             print(f"")
             print(f"Available sorting algorithms:{list(algorithmsDict.keys())}")
             print(f"Available args:{available_args}")

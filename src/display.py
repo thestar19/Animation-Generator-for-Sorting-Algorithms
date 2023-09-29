@@ -70,6 +70,16 @@ def updateGroups():
         for group in GUI.basicGroup.groups:
             group.update(None)
 
+def try_get_width(buttonTextObject) -> int:
+    try:
+        int(buttonTextObject.get_width())
+    except AttributeError:
+        if isinstance(buttonTextObject,int):
+            return buttonTextObject
+        elif isinstance(buttonTextObject, float):
+            return int(buttonTextObject)
+    return 1
+
 class Box:
     def __init__(self, rect):
         self.isActive = False
@@ -194,7 +204,7 @@ class Group:
                     element.setRect(((windowSize[0]*(20/900)) + self.items[0].myLabel.get_width()/2, self.rect.y+max(k.rect.height for k in self.items)+(windowSize[1]*(10/900)), element.baseWidth,
                                      element.rect.height))
                 else:
-                    element.setRect((currentLeft, self.rect.y, element.baseWidth + element.buttonText.get_width(),element.rect.height))
+                    element.setRect((currentLeft, self.rect.y, element.baseWidth + try_get_width(element.buttonText),element.rect.height))
                 if element not in self.item_collisions:
                     currentLeft += max(element.rect.width, element.myLabel.get_width()) + (windowSize[0]*(20/900))
 
@@ -218,7 +228,7 @@ class Group:
             currentLeft = 40 + max(k.myLabel.get_width() for k in self.items)
             for place, element in enumerate(self.items):
                 if element == self.nextRow:
-                    element.setRect((currentLeft*2+(windowSize[0]*(200/900)), self.rect.y+(windowSize[1]*(50/900)), element.baseWidth + element.buttonText.get_width(), element.rect.height))
+                    element.setRect((currentLeft*2+(windowSize[0]*(200/900)), self.rect.y+(windowSize[1]*(50/900)), element.baseWidth + try_get_width(element.buttonText), element.rect.height))
                 else:
                     element.setRect((currentLeft, currentTop, element.baseWidth + element.buttonText.get_width(), element.rect.height))
                 currentTop += element.rect.height + (windowSize[1]*(10/900))
@@ -587,6 +597,7 @@ class DropdownBox(InputBox):
         self.options = options
         dropdown_width = ceil((len(self.options) - 1) * self.rect.height / self.rect.y) * self.rect.width
         self.dropdown_rect = pygame.Rect((self.rect.x, 0, dropdown_width, self.rect.y))
+        self.buttonText = max(len(option) for option in options)
 
     def get_active_option(self):
         return self.options[self.DEFAUTL_OPTION]
@@ -597,7 +608,7 @@ class DropdownBox(InputBox):
         screen.blit(option_text, option_text.get_rect(center=self.rect.center))
 
         if self.isActive:
-            column = 0
+            column = 0 if len(self.options) * self.rect.height < self.rect.y else -0.5
             index = 0
             rect_start = self.rect.y - self.rect.height
             for i in range(self.DEFAUTL_OPTION + 1, len(self.options)):
@@ -618,7 +629,7 @@ class DropdownBox(InputBox):
 
     def update(self,event=None):
         mouse_position = pygame.mouse.get_pos()
-        column = 0
+        column = 0 if len(self.options) * self.rect.height < self.rect.y else -0.5
         index = 0
         rect_start = self.rect.y - self.rect.height
         for i in range(len(self.options) - 1):
@@ -635,8 +646,8 @@ class DropdownBox(InputBox):
                 self.active_option = i
 
         if pygame.mouse.get_pressed() != (0, 0, 0):
-            printToMainLog(4, f"Rect:{self.rect}, Mouse:{mouse_position},{self.dropdown_rect.collidepoint(mouse_position)}")
-            if self.isActive and self.dropdown_rect.collidepoint(mouse_position):
+            printToMainLog(4, f"Rect:{self.rect}, Mouse:{mouse_position},Collides:{self.dropdown_rect.collidepoint(mouse_position)},isActive:{self.isActive}")
+            if self.dropdown_rect.collidepoint(mouse_position):
                 self.options[self.DEFAUTL_OPTION], self.options[self.active_option + 1] = \
                     self.options[self.active_option + 1], self.options[self.DEFAUTL_OPTION]
                 self.active_option = -1
@@ -648,12 +659,11 @@ class DropdownBox(InputBox):
 # Button specific functions
 def delayX10BoxFunction(self):
     global someFactor
-    global delayBox
     if someFactor == 1:
         someFactor = 10
     else:
         someFactor = 1
-    delayBox.update(None)
+    GUI.delayBox.update(None)
 
 def includeSettingsInOutputBoxFunction(self):
     global includeSettingsInOutput
@@ -671,58 +681,46 @@ def showValueInBarsBox(self):
 
 
 def blueBarsColorBoxFunction(self):
-    global P1_colorPickerBox
-    global preview_colors
     if self.text == "Set":
-        animationColors.blue = copy(P1_colorPickerBox.combinedColor)
+        animationColors.blue = copy(GUI.P1_colorPickerBox.combinedColor)
     else:
         animationColors.blue = standard.blue
-    preview_colors.update(None)
+    GUI.preview_colors.update(None)
 
 def redBarsColorBoxFunction(self):
-    global P1_colorPickerBox
-    global preview_colors
     if self.text == "Set":
-        animationColors.red = copy(P1_colorPickerBox.combinedColor)
+        animationColors.red = copy(GUI.P1_colorPickerBox.combinedColor)
     else:
         animationColors.red = standard.red
-    preview_colors.update(None)
+    GUI.preview_colors.update(None)
 
 def greenBarsColorBoxFunction(self):
-    global P1_colorPickerBox
-    global preview_colors
     if self.text == "Set":
-        animationColors.green = copy(P1_colorPickerBox.combinedColor)
+        animationColors.green = copy(GUI.P1_colorPickerBox.combinedColor)
     else:
         animationColors.green = standard.green
-    preview_colors.update(None)
+    GUI.preview_colors.update(None)
 
 def baseBarsColorBoxFunction(self):
-    global P1_colorPickerBox
-    global preview_colors
     if self.text == "Set":
-        animationColors.grey = copy(P1_colorPickerBox.combinedColor)
+        animationColors.grey = copy(GUI.P1_colorPickerBox.combinedColor)
     else:
         animationColors.grey = standard.grey
-    preview_colors.update(None)
+    GUI.preview_colors.update(None)
 
 def backgroundColorBoxFunction(self):
-    global P1_colorPickerBox
-    global preview_colors
     if self.text == "Set":
-        animationColors.background = copy(P1_colorPickerBox.combinedColor)
+        animationColors.background = copy(GUI.P1_colorPickerBox.combinedColor)
     else:
         animationColors.background = standard.background
-    preview_colors.update(None)
+    GUI.preview_colors.update(None)
 
 def textInBarsColorBoxFunction(self):
-    global P1_colorPickerBox
-    global preview_colors
     if self.text == "Set":
-        animationColors.text = copy(P1_colorPickerBox.combinedColor)
+        animationColors.text = copy(GUI.P1_colorPickerBox.combinedColor)
     else:
         animationColors.text = standard.black
-    preview_colors.update(None)
+    GUI.preview_colors.update(None)
 
 
 

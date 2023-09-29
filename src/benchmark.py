@@ -133,7 +133,7 @@ def appendResult(aResult):
         file.write(f"numberOfPictures={aResult.numberOfPictures}\n")
 
 def runARound(size,format,algorithm,auto_loop = 3):
-    command = f"python3 src/main.py -f {format} -s {size} -d 10 -l 0 -a {algorithm} -bench true"
+    command = f"python3 src/main.py -t true -f {format} -s {size} -d 10 -l 0 -a {algorithm} -bench true"
     theFunction = None
     if DEBUG:
         print("----------------------------------------------------------------------------------------")
