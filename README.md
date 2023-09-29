@@ -51,6 +51,8 @@ To determine the resolution of the resulting animation, use flag -custom_res fol
 - Run `python3 src/main.py -custom_res 1920x1080`
 
 ### Benchmark
+<img src="res/benchmark.png" alt="benchmark preview" width="795" height=366>
+
 To better optimize the program & to enable features such as "estimated time for creation", a benchmark exists.
 You can contribute too:
 - Install the program so that `python3 src/main.py` runs correctly
