@@ -95,6 +95,7 @@ class Box:
     def setRect(self,rect):
         self.rect = pygame.Rect(rect)
 
+
 class sampleSortAnimation(Box):
     def __init__(self, rect):
         super().__init__(rect)
@@ -368,6 +369,7 @@ class justText(Box):
         self.myLabel = None
         self.mySize = 0
         self.myAlg = None
+        self.myDelay = 0
         if kwargs.get("side_text"):
             self.side_text = True
         else:
@@ -412,14 +414,21 @@ class justText(Box):
             # Check how many frames that usually generates
             size = GUI.sizeBox.get_value()
             alg = GUI.algorithmBox.get_active_option()
-            if self.mySize == size and self.myAlg == alg:
+            if self.mySize == size and self.myAlg == alg and self.myDelay == delay:
                 return None
             resulting_number_of_frames = self.searchInFile(size,alg)
-
+            self.mySize = size
+            self.myAlg = alg
+            self.myDelay = delay
             if resulting_number_of_frames > 5000:
                 self.text = f"Estimated playtime for animation: (unknown) sec"
             else:
-                self.text = f"Estimated playtime for animation: {round((float((delay * 30) / 1000) * resulting_number_of_frames) / 32,3)} sec"
+                if float((delay * 30) / 1000) < 0.8:
+                    FPS = 32 if GUI.outputFormatBox.get_active_option() == 'MP4' else 10
+                    This shit is broken!
+                    self.text = f"Estimated playtime for animation: {round(((float((delay * FPS) / 1000) * resulting_number_of_frames)/FPS)/(1/(float((delay * FPS) / 1000))),3)} sec"
+                else:
+                    self.text = f"Estimated playtime for animation: {round((float((delay * 30) / 1000) * resulting_number_of_frames) / 32, 3)} sec"
             self.draw()
 
     def draw(self):
@@ -649,12 +658,21 @@ class DropdownBox(InputBox):
         self.active_option = -1
         self.options = None
         self.DEFAUTL_OPTION = 0
+        self.options_text_obj = [(-1,pygame.Rect(0,0,0,0)) for k in range(100)]
+        self.columns = 0
+    def setTextLength(self):
+        self.options_text_obj.clear()
+        for i,option in enumerate(self.options):
+            option_text = baseFont.render(option[:12], 1, standard.grey)
+            self.options_text_obj.append((option_text,pygame.Rect(0,0,0,0)))
+        self.buttonText = max(k.get_width()/50 for k,rect in self.options_text_obj)
+
 
     def add_options(self, options):
         self.options = options
-        dropdown_width = ceil((len(self.options) - 1) * self.rect.height / self.rect.y) * self.rect.width
-        self.dropdown_rect = pygame.Rect((self.rect.x, 0, dropdown_width, self.rect.y))
-        self.buttonText = max(len(option) for option in options)
+        self.setTextLength()
+        self.columns = ceil(len(options)/10)
+
 
     def get_active_option(self):
         return self.options[self.DEFAUTL_OPTION]
@@ -663,48 +681,54 @@ class DropdownBox(InputBox):
         super().draw()
         option_text = self.font.render(self.options[self.DEFAUTL_OPTION], 1, standard.grey)
         screen.blit(option_text, option_text.get_rect(center=self.rect.center))
-
         if self.isActive:
-            column = 0 if len(self.options) * self.rect.height < self.rect.y else -0.5
+            column = 0 if self.name == "Output Format" else -0.5
             index = 0
             rect_start = self.rect.y - self.rect.height
             for i in range(self.DEFAUTL_OPTION + 1, len(self.options)):
                 rect = self.rect.copy()
                 rect.y -= (index + 1) * self.rect.height
-                if rect.y <= self.dropdown_rect.y:
+                rect.x = self.rect.x + (column * self.rect.width)
+                if rect.y <= 10:
                     column += 1
                     index = 0
                     rect.y = rect_start
                 index += 1
-                rect.x = self.rect.x + column * self.rect.width
+
 
                 options_color = standard.black if i - 1 == self.active_option else standard.grey
                 pygame.draw.rect(screen, self.options_color, rect, 0)
                 pygame.draw.rect(screen, self.color, rect, 3)  # draw border
                 option_text = self.font.render(self.options[i][:12], 1, options_color)
+                self.options_text_obj[i] = (option_text,rect)
                 screen.blit(option_text, option_text.get_rect(center=rect.center))
+
+    def checkCollision(self,mouse_position):
+        for i,(object,rect) in enumerate(self.options_text_obj):
+            if rect.collidepoint(mouse_position):
+                return True
+        return False
 
     def update(self,event=None):
         mouse_position = pygame.mouse.get_pos()
-        column = 0 if len(self.options) * self.rect.height < self.rect.y else -0.5
+        column = 0 if self.name == "Output Format" else -0.5
         index = 0
         rect_start = self.rect.y - self.rect.height
         for i in range(len(self.options) - 1):
             rect = self.rect.copy()
             rect.y -= (index + 1) * self.rect.height
-            if rect.y <= self.dropdown_rect.y:
+            rect.x = self.rect.x + column * self.rect.width
+            if rect.y <= 10:
                 column += 1
                 index = 0
                 rect.y = rect_start
             index += 1
-            rect.x = self.rect.x + column * self.rect.width
 
             if rect.collidepoint(mouse_position):
                 self.active_option = i
 
         if pygame.mouse.get_pressed() != (0, 0, 0):
-            #printToMainLog(4, f"Rect:{self.rect}, Mouse:{mouse_position},Collides:{self.dropdown_rect.collidepoint(mouse_position)},isActive:{self.isActive}")
-            if self.dropdown_rect.collidepoint(mouse_position):
+            if self.checkCollision(mouse_position):
                 self.options[self.DEFAUTL_OPTION], self.options[self.active_option + 1] = \
                     self.options[self.active_option + 1], self.options[self.DEFAUTL_OPTION]
                 self.active_option = -1
@@ -819,7 +843,7 @@ class GUI:
     delayX10Box = BoxWithText("Increase delay", (int((100/900)*width), int(((620+50*0)/900)*width), 60, 50), "x10", "x1", delayX10BoxFunction,side_text=True)
     includeSettingsInOutputBox = BoxWithText("GUI in output", (int(((100/900)/900)*width), int((620+50*1/1200)*height), 95, 50), "Include", "Exclude", includeSettingsInOutputBoxFunction,side_text=True)
     showValueInBarsBox = BoxWithText("Display value in bars", (int(((100/900)/900)*width), int(((620+50*1)/1200)*height), 95, 50), "Include", "Exclude", showValueInBarsBox,side_text=True)
-    outputFormatBox = DropdownBox('Output Format', (int((800/900)*width), int((500/1200)*height), 140, 50), baseFont, standard.grey,side_text=True)
+    outputFormatBox = DropdownBox('Output Format', (int((700/900)*width), int((500/1200)*height), 140, 50), baseFont, standard.grey,side_text=True)
 
 
     #Color picking - sliders

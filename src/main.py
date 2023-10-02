@@ -38,7 +38,7 @@ CURRENT_OUTPUT_FORMATS = ["GIF","MP4"]
 SCREENSHOT_FILENAME = "pictures/screenshot"  # + a counter number + JPG
 BENCHMARK_TEXT_FILE = "temp_file_for_benchmark.txt"
 ANIMATION_TABLE_TIME_ESTIMATE = "animationTimeEstimate.txt"
-CREATE_ANIMATION_TABLE = False
+CREATE_ANIMATION_TABLE = (False,[],[])
 
 #printL types:
 # 1 = normal log message
@@ -218,11 +218,29 @@ def createGIF(counter,SCREENSHOT_FILENAME,delay,loops,terminal=False):
     printL(4, f"Total number of recorded images: {str(len(fileNames))}")
     updateDisplay(terminal)
     listOfImages = []
+    howManyExtraFrames = float((delay * 30) / 1000)  # Formula to get number of repeat images for delay
+    if howManyExtraFrames < 0.8:
+        printL(3,"Delay less than 100ms may result in skipped frames.")
+        printL(3, "This is because most GIF rendering sources cannot display less than that")
+        printL(3, "For better accuracy, use MP4 as output format")
+    skipFrameCounter = 0
     for (counter, filename) in enumerate(fileNames):
-        if counter % 1000 == 1:
+        if counter % 500 == 217 or len(fileNames) < 50:
             updateDisplay(terminal)
-        listOfImages.append(iio.imread(filename))
-        printProgress(int(((counter) / len(fileNames)) * 100*0.7))
+            printProgress(int(((counter) / len(fileNames)) * 100 * 0.7))
+            collect()
+        if howManyExtraFrames < 0.8:
+            if skipFrameCounter > 1:
+                listOfImages.append(iio.imread(filename))
+                skipFrameCounter = 0
+            else:
+                skipFrameCounter += howManyExtraFrames
+        else:
+            if howManyExtraFrames < 1:
+                howManyExtraFrames = 1
+            aFrame = iio.imread(filename)  # So we don't read it more than once
+            for i in range(int(howManyExtraFrames)):
+                listOfImages.append(aFrame)
     printL(1, "Writing GIF to disk")
     writeGifFile(listOfImages,loops,delay)
     printProgress(100)
@@ -334,18 +352,17 @@ def listAsStringGood(myList):
     return valid_formats
 
 
-def createTableForAnimationTimeEstimate():
+def createTableForAnimationTimeEstimate(allNumbers,startover,rounds,algorithmsToRun):
     printL(1,f"Table generation for animation time requested")
     printL(1,f"Creating table, writing results to {ANIMATION_TABLE_TIME_ESTIMATE}")
     printL(1, f"Program will generate new table, write it to disk and then quit")
     printL(1, f"To use the new table, simply start the program again without the flag -new_time_table")
-    rounds = 5
-    allNumbers = [20,50,100,200]
-    remove(ANIMATION_TABLE_TIME_ESTIMATE)
-    f = open(ANIMATION_TABLE_TIME_ESTIMATE,"w")
+    if startover:
+        remove(ANIMATION_TABLE_TIME_ESTIMATE)
+    f = open(ANIMATION_TABLE_TIME_ESTIMATE,"a")
     progressCounter = 0
     for outputSize in allNumbers:
-        for alg in list(algorithmsDict.keys()):
+        for alg in algorithmsToRun:
             avgResult = 0
             for i in range(int(rounds)):
                 numbers = [randint(10, 400) for i in range(outputSize)]  # random list to be sorted
@@ -448,8 +465,11 @@ def main():
     createPicturesFolder()
 
     #Check if new table is to be generated
-    if CREATE_ANIMATION_TABLE:
-        createTableForAnimationTimeEstimate()
+    doCreate,argNumbers,argAlgs = CREATE_ANIMATION_TABLE
+    if doCreate:
+        if argAlgs == "all":
+            argAlgs = list(algorithmsDict.keys())
+        createTableForAnimationTimeEstimate(argNumbers,False,5,argAlgs)
 
     while running:
         updateDisplay()
@@ -630,6 +650,7 @@ if __name__ == '__main__':
             print(f"    Number of loops (GIF ONLY): -l => 0(inf)-9999")
             print(f"    Output debug info (verbose): -v => true/false")
             print(f"    Use in terminal mode: -t => true/false")
+            print(f"    Reserved use for time table creation: -new_time_table => int,int,int... [valid alg]/all ")
             print(f"    Reserved use for benchmark: -bench => true/false")
             print(f"        -bench has other req, may not work without benchmark.py")
             print(f"")
@@ -650,7 +671,7 @@ if __name__ == '__main__':
             except Exception as e:
                 print(f"Got arg -custom_res, but value was incorrectly formatted")
                 print(f"Exception:{e}")
-                print(f"This is a beta feature, and may therefore be unstable")
+                print(f"This is a beta feature, and may therefore be unstable like this")
                 print(f"Ending program")
                 sys.exit(0)
         if "-V" in sys.argv or "-V" in sys.argv:
@@ -658,7 +679,12 @@ if __name__ == '__main__':
             DEBUG = True
         if "-new_time_table" in sys.argv:
             pos_arg = sys.argv.index("-new_time_table")
-            CREATE_ANIMATION_TABLE = True
+            argNumbers = list(int(k) for k in sys.argv[pos_arg+1].split(","))
+            if sys.argv[pos_arg+2] != "all":
+                argAlgs = list(int(k) for k in sys.argv[pos_arg+1].split(","))
+            else:
+                argAlgs = sys.argv[pos_arg+2]
+            CREATE_ANIMATION_TABLE = (True,argNumbers,argAlgs)
     #Check if correct software is installed
     #checkVersionOfPYAV()
     #Check for any args in program init
