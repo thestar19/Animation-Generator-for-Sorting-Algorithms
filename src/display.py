@@ -531,7 +531,7 @@ class SlideBox(InputBox):
         super().__init__(name, color, rect)
         self.start = self.rect.x + 6
         self.end = self.rect.x + self.rect.w - 6
-        self.value = self.start
+        self.value = self.start + 100
         self.myLabel = None
         self.myText = None
 

@@ -233,14 +233,15 @@ def createGIF(counter,SCREENSHOT_FILENAME,delay,loops,terminal=False):
             printProgress(int(((counter) / len(fileNames)) * 100 * 0.7))
             collect()
         if wantedFPS > 100:
-            if skipFrameCounter > 1:
+            if skipFrameCounter > 100:
                 listOfImages.append(iio.imread(filename))
                 skipFrameCounter = 0
             else:
-                skipFrameCounter += howManyExtraFrames
+                skipFrameCounter += (wantedFPS - 100)
         else:
             listOfImages.append(iio.imread(filename)) # So we don't read it more than once
     printL(1, "Writing GIF to disk")
+    printL(4, f"Actual number of frames being written to disk:{len(listOfImages)}")
     writeGifFile(listOfImages,loops,delay)
     printProgress(100)
     updateDisplay(terminal)
