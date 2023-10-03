@@ -932,7 +932,7 @@ def drawBottomMenu():
     '''Draw the menu below the bars'''
     for aBox in GUI.ListOfAllGUIElements:
         # We have to skip stop & start button bc they are special
-        if isInstance(ButtonBox,aBox):
+        if isinstance(ButtonBox,aBox):
             aBox.draw()
     if do_sorting:
         GUI.stopButton.draw()
