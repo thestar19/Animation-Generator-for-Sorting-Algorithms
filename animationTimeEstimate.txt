@@ -94,3 +94,12 @@ alg=strand,size=200,result=3360.2
 alg=odd-even,size=200,result=5001.0
 alg=pigeonhole,size=200,result=403.0
 alg=exchange,size=200,result=5001.0
+alg=insertion,size=10,result=24.8
+alg=bubble,size=10,result=42.6
+alg=selection,size=10,result=57.0
+alg=merge,size=10,result=25.2
+alg=quick,size=10,result=29.4
+alg=counting,size=10,result=13.0
+alg=cocktail,size=10,result=40.2
+alg=cycle,size=10,result=11.4
+alg=insertion,size=211,result=834.0
