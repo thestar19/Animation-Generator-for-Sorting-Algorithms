@@ -184,18 +184,18 @@ class Group:
                 if not hasattr(element, "baseWidth"):
                     printToMainLog(4,"Element lacks object baseWidth")
                     return
-                if element.baseWidth == None:
+                if element.baseWidth is None:
                     printToMainLog(4, "element.baseWidth = None")
                     return
                 if not hasattr(element, "myLabel"):
                     printToMainLog(4, "No attr myLabel")
                     return
-                if element.myLabel == None:
+                if element.myLabel is None:
                     element.myLabel = baseFont.render("", True, self.color)
                 if not hasattr(element, "buttonText"):
                     printToMainLog(4, "No button text element in object")
                     return
-                if element.buttonText == None:
+                if element.buttonText is None:
                     element.buttonText = baseFont.render("", True, self.color)
             # Find how far left so that buttons line up well, and text does not wrap over line
             # get starting top point
@@ -213,15 +213,15 @@ class Group:
             for element in self.items:
                 if not hasattr(element,"baseWidth"):
                     return
-                if element.baseWidth == None:
+                if element.baseWidth is None:
                     return
                 if not hasattr(element,"myLabel"):
                     return
-                if element.myLabel == None:
+                if element.myLabel is None:
                     return
                 if not hasattr(element,"buttonText"):
                     return
-                if element.buttonText == None:
+                if element.buttonText is None:
                     element.buttonText = baseFont.render("", True, self.color)
             # Find how far left so that buttons line up well, and text does not wrap over line
             # get starting top point
@@ -803,9 +803,6 @@ def textInBarsColorBoxFunction(self):
         animationColors.text = standard.black
     GUI.preview_colors.update(None)
 
-
-
-
 # Global Settings - used for animation generation
 numBars = 0
 do_sorting = False
@@ -884,7 +881,7 @@ def updateWidgets(event):
     # Instead of looping
     for aBox in GUI.ListOfAllGUIElements:
         # We have to skip stop & start button bc they are special
-        if type(aBox) != ButtonBox:
+        if isinstance(ButtonBox,aBox):
             aBox.update(event)
     #Stop & start button are specials
     if do_sorting:
@@ -935,7 +932,7 @@ def drawBottomMenu():
     '''Draw the menu below the bars'''
     for aBox in GUI.ListOfAllGUIElements:
         # We have to skip stop & start button bc they are special
-        if type(aBox) != ButtonBox:
+        if isInstance(ButtonBox,aBox):
             aBox.draw()
     if do_sorting:
         GUI.stopButton.draw()

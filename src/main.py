@@ -59,8 +59,11 @@ def deleteTempFiles():
             remove("pictures/" + files)
         for directories in myDir:
             rmdir("pictures/" + directories)
-    except:
-        raise EIO("Could not delete files in subfolder!")
+    except OSError as e:
+        print("Could not delete files in subfolder!")
+        print(f"Error:{e}")
+        print("Quitting program")
+        sys.exit(0)
 
 # For some uses, if the output file already exists it may cause problems.
 # Therefore, this function deletes that file using os lib
@@ -69,8 +72,11 @@ def deleteExistingFile(name):
         try:
             remove(name)
             printL(1, f"Removed {name}")
-        except:
+        except OSError as e:
             printL(3,f"Could not remove {name}")
+            print(f"Error:{e}")
+            print("Quitting program")
+            sys.exit(0)
 
 #Call function with type according to above (eg 0 for normal log)
 # and a string with whatever should be added to log
@@ -342,8 +348,11 @@ def createPicturesFolder():
             return -1
     try:
         mkdir("pictures")
-    except:
-        raise Exception("Could not create pictures folder")
+    except OSError as e:
+        print("Could not create pictures folder!")
+        print(f"Error:{e}")
+        print("Quitting program")
+        sys.exit(0)
 
 def listAsStringGood(myList):
     valid_formats = ""
