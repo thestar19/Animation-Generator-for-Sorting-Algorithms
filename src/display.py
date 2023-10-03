@@ -370,6 +370,7 @@ class justText(Box):
         self.mySize = 0
         self.myAlg = None
         self.myDelay = 0
+        self.printedNoteAboutTableSettings = False
         if kwargs.get("side_text"):
             self.side_text = True
         else:
@@ -391,8 +392,7 @@ class justText(Box):
                 line_size = int(line[1].split("=")[1])
                 line_result = float(line[2].split("=")[1])
                 # if guess is close AND right alg AND new guess is closer than last
-                myFactor = size/line_size
-                if (alg == line_alg) and (size*0.5 <= line_size <= size * 4) and abs(1-(size/line_size)) < lastFactor:
+                if (alg == line_alg) and (size*0.5 <= line_size <= size * 2) and abs(1-(size/line_size)) < lastFactor:
                     resulting_number_of_frames = line_result * (size/line_size)
                     lastFactor = abs(1-(size/line_size))
                     # Don't break because if we find better than we want to take it
@@ -414,21 +414,21 @@ class justText(Box):
             # Check how many frames that usually generates
             size = GUI.sizeBox.get_value()
             alg = GUI.algorithmBox.get_active_option()
-            if self.mySize == size and self.myAlg == alg and self.myDelay == delay:
+            if self.mySize == size and self.myAlg == alg and self.myDelay == delay or size < 10:
                 return None
             resulting_number_of_frames = self.searchInFile(size,alg)
             self.mySize = size
             self.myAlg = alg
             self.myDelay = delay
-            if resulting_number_of_frames > 5000:
+            if resulting_number_of_frames > 5000 or size * 1.1 < resulting_number_of_frames < 0.9*size:
                 self.text = f"Estimated playtime for animation: (unknown) sec"
+                if not self.printedNoteAboutTableSettings:
+                    printToMainLog(4, f"----------------------------------------------------------------------")
+                    printToMainLog(4,f"Missing data in table for these settings (or animation will be very long)")
+                    printToMainLog(4, f"If you are reading this, feel free to run -new_time_table {size} {alg}")
+                    self.printedNoteAboutTableSettings = True
             else:
-                if float((delay * 30) / 1000) < 0.8:
-                    FPS = 32 if GUI.outputFormatBox.get_active_option() == 'MP4' else 10
-                    This shit is broken!
-                    self.text = f"Estimated playtime for animation: {round(((float((delay * FPS) / 1000) * resulting_number_of_frames)/FPS)/(1/(float((delay * FPS) / 1000))),3)} sec"
-                else:
-                    self.text = f"Estimated playtime for animation: {round((float((delay * 30) / 1000) * resulting_number_of_frames) / 32, 3)} sec"
+                self.text = f"Estimated playtime for animation: {round(resulting_number_of_frames/(1000/delay),3)} sec"
             self.draw()
 
     def draw(self):

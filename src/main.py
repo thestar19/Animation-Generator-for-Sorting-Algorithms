@@ -197,6 +197,8 @@ def updateDisplay(terminal = False):
             print(f"{bcolors.OKBLUE} Debug: {value} {bcolors.ENDC}")
 def writeGifFile(listOfImages,numberOfLoops,delay):
     newGif = iio.imopen('sorting.gif', "w", plugin="pillow")
+    # GIF format is specified in centiseconds, delay is ms
+    # But this conversion is done by imageio, so send delay directly
     newGif.write(listOfImages, duration=int(delay), loop=numberOfLoops, optimize=True)
     newGif.close()
 
@@ -204,7 +206,7 @@ def writeGifFile(listOfImages,numberOfLoops,delay):
 def createGIF(counter,SCREENSHOT_FILENAME,delay,loops,terminal=False):
     updateDisplay(terminal)
     #Idea is that pictures are generated with numbers 0 to some MAX
-    printL(1,"Trying to generate GIF, this may freeze the program and take a while")
+    printL(1,"Trying to generate GIF, this may freeze the program and take a while.")
     fileNames = []
     if loops == "Inf":
         loops = 0
@@ -212,35 +214,32 @@ def createGIF(counter,SCREENSHOT_FILENAME,delay,loops,terminal=False):
         fileNames.append(f"{SCREENSHOT_FILENAME}{str(i)}.jpg")
     #This will start to load in individual pictures into gif engine
     deleteExistingFile("sorting.gif")
-    printL(1, f"Adding {str(delay)} ms delay for each image in GIF")
-    printL(4, "Accurate GIF settings is applied \n Therefore every frame from animation will be in GIF.")
-    printL(4, "This increases time to generate, but also more accurately displays how sorting function works.")
-    printL(4, f"Total number of recorded images: {str(len(fileNames))}")
+    printL(1, f"Adding {str(delay)} ms delay for each image in GIF.")
+    printL(4, f"Total number of recorded images: {str(len(fileNames))}.")
     updateDisplay(terminal)
     listOfImages = []
-    howManyExtraFrames = float((delay * 30) / 1000)  # Formula to get number of repeat images for delay
-    if howManyExtraFrames < 0.8:
-        printL(3,"Delay less than 100ms may result in skipped frames.")
-        printL(3, "This is because most GIF rendering sources cannot display less than that")
-        printL(3, "For better accuracy, use MP4 as output format")
+    # Pillow can theoretically handle an unsigned int of max delay per frame, ergo many many seconds per image.
+    wantedFPS = (1000/delay) # if more than 100, start skipping frames. otherwise just pass it along to pillow
+    if delay < 10:
+        printL(3,"Delay less than 10ms may result in skipped frames.")
+        printL(3, "This is because GIF89a specifies an int of centiseconds per frame,")
+        printL(3,"ergo 1/100 centisecond => 10ms is min option for GIF.")
+        printL(3, "For more information: https://twitter.com/FreyaHolmer/status/1105741362895482880")
+        printL(3, "For better accuracy, use MP4 as output format.")
     skipFrameCounter = 0
     for (counter, filename) in enumerate(fileNames):
         if counter % 500 == 217 or len(fileNames) < 50:
             updateDisplay(terminal)
             printProgress(int(((counter) / len(fileNames)) * 100 * 0.7))
             collect()
-        if howManyExtraFrames < 0.8:
+        if wantedFPS > 100:
             if skipFrameCounter > 1:
                 listOfImages.append(iio.imread(filename))
                 skipFrameCounter = 0
             else:
                 skipFrameCounter += howManyExtraFrames
         else:
-            if howManyExtraFrames < 1:
-                howManyExtraFrames = 1
-            aFrame = iio.imread(filename)  # So we don't read it more than once
-            for i in range(int(howManyExtraFrames)):
-                listOfImages.append(aFrame)
+            listOfImages.append(iio.imread(filename)) # So we don't read it more than once
     printL(1, "Writing GIF to disk")
     writeGifFile(listOfImages,loops,delay)
     printProgress(100)
@@ -272,7 +271,7 @@ def createMP4(numberOfPictures,SCREENSHOT_FILENAME,delay,terminal=False):
     printL(4, "This increases time to generate, but also more accurately displays how sorting function works.")
     printL(4, f"Total number of recorded images: {str(len(fileNames))}")
     printL(4,f"Ignoring looping options because MP4 format does not support")
-    printL(1, f"Estimated total runtime of resulting animation:{round((howManyExtraFrames * len(fileNames))/32,3)} seconds")
+    printL(4, f"Estimated (bad implement) total runtime of resulting animation:{round((howManyExtraFrames * len(fileNames))/30,3)} seconds")
     updateDisplay(terminal)
     with iio.imopen("sorting.mp4","w",plugin="pyav") as newVideo:
         newVideo.init_video_stream("mpeg4",fps=30)
@@ -356,7 +355,9 @@ def createTableForAnimationTimeEstimate(allNumbers,startover,rounds,algorithmsTo
     printL(1,f"Table generation for animation time requested")
     printL(1,f"Creating table, writing results to {ANIMATION_TABLE_TIME_ESTIMATE}")
     printL(1, f"Program will generate new table, write it to disk and then quit")
+    printL(1, f"Don't kill the program, it may corrupt the table. ")
     printL(1, f"To use the new table, simply start the program again without the flag -new_time_table")
+    updateDisplay(False)
     if startover:
         remove(ANIMATION_TABLE_TIME_ESTIMATE)
     f = open(ANIMATION_TABLE_TIME_ESTIMATE,"a")
@@ -378,6 +379,7 @@ def createTableForAnimationTimeEstimate(allNumbers,startover,rounds,algorithmsTo
     # Some things are not accounted for, so just to make sure that the program begins with a clean slate.
     deleteTempFiles()
     f.close()
+    updateDisplay(False)
     sys.exit(0)
 
 def createPicturesForOutput(TERMINAL_MODE,counter_for_number_pictures_created,counter_skipping_images_during_creation,numbers,alg_iterator,OUTPUT_WINDOW_SIZE,**kwargs):
@@ -667,6 +669,7 @@ if __name__ == '__main__':
             value = sys.argv[pos_arg+1]
             try:
                 custom_display_res = value.split("x")
+                printL(3, f"Custom resolution requested, this feature may be unstable!")
                 printL(4,f"Req custom display:{custom_display_res}")
             except Exception as e:
                 print(f"Got arg -custom_res, but value was incorrectly formatted")
@@ -681,7 +684,7 @@ if __name__ == '__main__':
             pos_arg = sys.argv.index("-new_time_table")
             argNumbers = list(int(k) for k in sys.argv[pos_arg+1].split(","))
             if sys.argv[pos_arg+2] != "all":
-                argAlgs = list(int(k) for k in sys.argv[pos_arg+1].split(","))
+                argAlgs = list(k for k in sys.argv[pos_arg+2].split(","))
             else:
                 argAlgs = sys.argv[pos_arg+2]
             CREATE_ANIMATION_TABLE = (True,argNumbers,argAlgs)
