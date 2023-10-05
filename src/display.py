@@ -881,7 +881,7 @@ def updateWidgets(event):
     # Instead of looping
     for aBox in GUI.ListOfAllGUIElements:
         # We have to skip stop & start button bc they are special
-        if isinstance(aBox,ButtonBox):
+        if not isinstance(aBox,ButtonBox):
             aBox.update(event)
     #Stop & start button are specials
     if do_sorting:
@@ -932,7 +932,7 @@ def drawBottomMenu():
     '''Draw the menu below the bars'''
     for aBox in GUI.ListOfAllGUIElements:
         # We have to skip stop & start button bc they are special
-        if isinstance(aBox,ButtonBox):
+        if not isinstance(aBox,ButtonBox):
             aBox.draw()
     if do_sorting:
         GUI.stopButton.draw()
