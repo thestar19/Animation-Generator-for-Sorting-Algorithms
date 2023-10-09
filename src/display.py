@@ -88,6 +88,7 @@ class Box:
         self.baseWidth = copy(self.rect.w)
         self.myLabel = None
         self.buttonText = None
+        self.baseHeight = copy(self.rect.h)
 
     def update(self,event=None):
         self.mousePos = pygame.mouse.get_pos()
@@ -212,7 +213,7 @@ class Group:
                     element.setRect(((windowSize[0]*(20/900)) + self.items[0].myLabel.get_width()/2, self.rect.y+max(k.rect.height for k in self.items)+(windowSize[1]*(10/900)), element.baseWidth,
                                      element.rect.height))
                 else:
-                    element.setRect((currentLeft, self.rect.y, element.baseWidth + try_get_width(element.buttonText),element.rect.height))
+                    element.setRect((currentLeft, self.rect.y, element.baseWidth + element.buttonText.get_width()/2,element.rect.height))
                 if element not in self.item_collisions:
                     currentLeft += max(element.rect.width, element.myLabel.get_width()) + (windowSize[0]*(20/900))
 
@@ -247,7 +248,7 @@ class Group:
                 currentLeft -= maxLabelWidth
             for place, element in enumerate(self.items):
                 if element in self.nextRow:
-                    element.setRect((currentLeft+(windowSize[0]*(100/900)) + element.myLabel.get_width() + maxButtonWidth, element.rect.y, element.baseWidth + element.buttonText.get_width(), element.rect.height))
+                    element.setRect((currentLeft + (windowSize[0]*(30/900)) + maxButtonWidth*2 + element.myLabel.get_width(), element.rect.y, element.baseWidth + element.buttonText.get_width(), element.rect.height))
                 else:
                     element.setRect((currentLeft, currentTop, element.baseWidth + maxButtonWidth, element.rect.height))
                 currentTop += element.rect.height + (windowSize[1]*(10/1200))
@@ -477,12 +478,11 @@ class justText(Box):
     def draw(self):
         if self.side_text:
             label = baseFont.render(self.text, True, self.color)
-            self.myLabel = label
             screen.blit(label, (self.rect.x - label.get_width()-10, self.rect.y+(self.rect.height/4)))
         else:
             label = baseFont.render(self.text, True, self.color)
-            self.myLabel = label
             screen.blit(label, (self.rect.x + (self.rect.w - label.get_width()) / 2, self.rect.y - 32))
+        self.buttonText = label
 
 
 class BoxWithText(Box):
@@ -891,7 +891,7 @@ class GUI:
     delayX10Box = BoxWithText("Increase delay", (int((100/900)*width), int(((620+50*0)/900)*width), 60, 50), "x10", "x1", delayX10BoxFunction,side_text=True)
     includeSettingsInOutputBox = BoxWithText("GUI in output", (int(((100/900)/900)*width), int((620+50*1/1200)*height), 95, 50), "Include", "Exclude", includeSettingsInOutputBoxFunction,side_text=True)
     showValueInBarsBox = BoxWithText("Display value in bars", (int(((100/900)/900)*width), int(((620+50*1)/1200)*height), 95, 50), "Include", "Exclude", showValueInBarsBox,side_text=True)
-    outputFormatBox = DropdownBox('Output Format', (int((700/900)*width), int((500/1200)*height), 140, 50), baseFont, standard.grey,side_text=True)
+    outputFormatBox = DropdownBox('Output Format', (int((800/900)*width), int((700/1200)*height), 140, 50), baseFont, standard.grey,side_text=True)
 
 
     #Color picking - sliders
@@ -916,7 +916,7 @@ class GUI:
     preview_colors = sampleSortAnimation((int((600/900)*width),int(((850+30*4-10)/1200)*height), 255,90))
 
     # Text data group - only exists for displaying data
-    estimatedAnimationTimeBox = justText(f"Estimated playtime for animation: sec",standard.grey,(int((450/900)*width), int((1100/1200)*height), 140, 50))
+    estimatedAnimationTimeBox = justText(f"Estimated playtime for animation: sec",standard.grey,(int((300/900)*width), int((1100/1200)*height), 140, 50))
 
     #Groups
     # Very important, objects must be in order!
@@ -927,7 +927,7 @@ class GUI:
     setResetColorGroup = Group((int((50/900)*width),int((820/1200)*height),int((50/900)*width),int((50/1200)*height)),(False,False,False), title = "Color for",objectFormatting="Vertical",item_collisions = [],if_different_offset=[blueBarsColorSample,RedBarsColorSample,greenBarsColorSample,BaseBarsColorSample,textBarsColorSample,backBarsColorSample],
                                a = BlueBarsColorBox, b = RedBarsColorBox,c = greenBarsColorBox, d = BaseBarsColorBox, e = textInBarsColorBox, f = backgroundColorBox,g = blueBarsColorSample,h = RedBarsColorSample,j = greenBarsColorSample,k = BaseBarsColorSample,l = textBarsColorSample,m = backBarsColorSample)
     basicGroup = Group((int((30/900)*width),int((510/1200)*height),int((50/900)*width),int((50/1200)*height)),(False,False,False),title="",objectFormatting="Horizontal",item_collisions = [playButton,stopButton],if_different_offset=None,a = sizeBox,b = loopBox,c = delayBox,d = algorithmBox,e=playButton,f=stopButton)
-    textDataGroup = Group((int((450/900)*width),int((1150/1200)*height),int((140/900)*width),int((50/1200)*height)), (False,False,False), title="", objectFormatting="Vertical", item_collisions = [], if_different_offset=None, a = estimatedAnimationTimeBox)
+    textDataGroup = Group((int((300/900)*width),int((1150/1200)*height),int((140/900)*width),int((50/1200)*height)), (False,False,False), title="", objectFormatting="Vertical", item_collisions = [], if_different_offset=None, a = estimatedAnimationTimeBox)
 
 
     #Add ref to all elements in list.
@@ -938,6 +938,7 @@ class GUI:
                            textInBarsColorBox,backgroundColorBox,setResetColorGroup,greenBarsColorBox,basicGroup,
                            estimatedAnimationTimeBox,blueBarsColorSample,RedBarsColorSample,greenBarsColorSample,
                            BaseBarsColorSample,textBarsColorSample,backBarsColorSample,textDataGroup])
+
 def updateWidgets(event):
     # Instead of looping
     for aBox in GUI.ListOfAllGUIElements:
