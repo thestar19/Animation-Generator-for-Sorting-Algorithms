@@ -84,12 +84,17 @@ class Box:
     def __init__(self, rect):
         self.isActive = False
         self.rect = pygame.Rect(rect)
+        self.name = "superName"
+        self.baseWidth = copy(self.rect.w)
+        self.myLabel = None
+        self.buttonText = None
+        self.baseHeight = copy(self.rect.h)
 
     def update(self,event=None):
         self.mousePos = pygame.mouse.get_pos()
         self.clicked = pygame.mouse.get_pressed() != (0, 0, 0)
         self.isActive = True if self.rect.collidepoint(self.mousePos) else False
-        updateGroups()
+
 
 
     def setRect(self,rect):
@@ -141,7 +146,10 @@ class Group:
         self.groups.append(self)
         self.objectFormatting = objectFormatting
         self.counter = 0
-        self.nextRow = if_different_offset
+        if not isinstance(if_different_offset,list):
+            self.nextRow = [if_different_offset]
+        else:
+            self.nextRow = if_different_offset
 
     def find_rightmost(self):
         most_right = 0
@@ -199,46 +207,64 @@ class Group:
                     element.buttonText = baseFont.render("", True, self.color)
             # Find how far left so that buttons line up well, and text does not wrap over line
             # get starting top point
-            currentLeft = (windowSize[0]*(20/900)) + self.items[0].myLabel.get_width()/2
+            currentLeft = self.rect.left + self.items[0].myLabel.get_width()/2
             for place, element in enumerate(self.items):
-                if element == self.nextRow:
+                if element in self.nextRow:
                     element.setRect(((windowSize[0]*(20/900)) + self.items[0].myLabel.get_width()/2, self.rect.y+max(k.rect.height for k in self.items)+(windowSize[1]*(10/900)), element.baseWidth,
                                      element.rect.height))
                 else:
-                    element.setRect((currentLeft, self.rect.y, element.baseWidth + try_get_width(element.buttonText),element.rect.height))
+                    element.setRect((currentLeft, self.rect.y, element.baseWidth + element.buttonText.get_width()/2,element.rect.height))
                 if element not in self.item_collisions:
                     currentLeft += max(element.rect.width, element.myLabel.get_width()) + (windowSize[0]*(20/900))
 
         elif self.objectFormatting == "Vertical":
             for element in self.items:
                 if not hasattr(element,"baseWidth"):
+                    printToMainLog(4, f"{element.name} lacks object baseWidth")
                     return
                 if element.baseWidth is None:
+                    printToMainLog(4, f"{element.name}.baseWidth = None")
                     return
                 if not hasattr(element,"myLabel"):
+                    printToMainLog(4, f"{element.name}=No attr myLabel")
                     return
                 if element.myLabel is None:
+                    element.myLabel = baseFont.render("", True, self.color)
                     return
                 if not hasattr(element,"buttonText"):
+                    printToMainLog(4, f"No button text element in {element.name}")
                     return
                 if element.buttonText is None:
                     element.buttonText = baseFont.render("", True, self.color)
             # Find how far left so that buttons line up well, and text does not wrap over line
             # get starting top point
+            maxLabelWidth = max((k.myLabel.get_width()) for k in self.items)
+            maxButtonWidth = max((k.buttonText.get_width() for k in self.items))
             currentTop = self.rect.y
-            currentLeft = 40 + max(k.myLabel.get_width() for k in self.items)
+            currentLeft = self.rect.left
+            if currentLeft - maxLabelWidth < (20/900)*windowSize[0]:
+                currentLeft += maxLabelWidth
+            if currentLeft + maxLabelWidth > windowSize[0]:
+                currentLeft -= maxLabelWidth
             for place, element in enumerate(self.items):
-                if element == self.nextRow:
-                    element.setRect((currentLeft*2+(windowSize[0]*(100/900)), self.rect.y+(windowSize[1]*(30/900)), element.baseWidth + try_get_width(element.buttonText), element.rect.height))
+                if element in self.nextRow:
+                    element.setRect((currentLeft + (windowSize[0]*(30/900)) + maxButtonWidth*2 + element.myLabel.get_width(), element.rect.y, element.baseWidth + element.buttonText.get_width(), element.rect.height))
                 else:
-                    element.setRect((currentLeft, currentTop, element.baseWidth + element.buttonText.get_width(), element.rect.height))
-                currentTop += element.rect.height + (windowSize[1]*(10/900))
+                    element.setRect((currentLeft, currentTop, element.baseWidth + maxButtonWidth, element.rect.height))
+                currentTop += element.rect.height + (windowSize[1]*(10/1200))
                 # Place all text 10 pix from left, top = 10px + height + 10px
                 # Remember to account for any labels
         else:
-            printToMainLog(3,"Some group had config for group other than Vertical or Horizontal")
+            printToMainLog(3,f"Some group ({self.items}) had config for group other than Vertical or Horizontal")
             printToMainLog(3, "This may cause incorrect GUI")
 
+    def findItemsAtSimilarHeight(self):
+        myItems = [0]
+        for group in self.groups:
+            for object in group.items:
+                if self.rect.top - 10 < object.rect.top < self.rect.top + 10:
+                    myItems.append(object.rect.left)
+        return myItems
 
     def draw(self):
         self.manageSpacing()
@@ -277,7 +303,25 @@ class Group:
                 pygame.draw.line(screen, self.color, (left - offset_width, top + height + offset_height_underside), (left + width - offset_width, top + height + offset_height_underside), 3)
 
     def update(self,event):
+        return
+
+
+class ColorSampleRectangle(Box):
+    def __init__(self, name, rect, color, outlineColor):
+        super().__init__(rect)
+        self.name = name
+        self.currentColor = color
+        self.outlineColor = outlineColor
+
+    def draw(self):
+        pygame.draw.rect(screen,self.currentColor,(self.rect.x, self.rect.y, self.rect.w-2, self.rect.h-2), 50)
+        pygame.draw.rect(screen, self.outlineColor, self.rect, 3)
+
+    def update(self, event):
+        super().update(event)
         self.draw()
+
+
 
 class InputBox(Box):
     def __init__(self, name, color, rect, **kwargs):
@@ -434,12 +478,11 @@ class justText(Box):
     def draw(self):
         if self.side_text:
             label = baseFont.render(self.text, True, self.color)
-            self.myLabel = label
             screen.blit(label, (self.rect.x - label.get_width()-10, self.rect.y+(self.rect.height/4)))
         else:
             label = baseFont.render(self.text, True, self.color)
-            self.myLabel = label
             screen.blit(label, (self.rect.x + (self.rect.w - label.get_width()) / 2, self.rect.y - 32))
+        self.buttonText = label
 
 
 class BoxWithText(Box):
@@ -662,11 +705,13 @@ class DropdownBox(InputBox):
         self.columns = 0
     def setTextLength(self):
         self.options_text_obj.clear()
+        maxWidth = 0
         for i,option in enumerate(self.options):
             option_text = baseFont.render(option[:12], 1, standard.grey)
+            if option_text.get_width() > maxWidth:
+                maxWidth = option_text.get_width()
+                self.buttonText = option_text
             self.options_text_obj.append((option_text,pygame.Rect(0,0,0,0)))
-        self.buttonText = max(k.get_width()/50 for k,rect in self.options_text_obj)
-
 
     def add_options(self, options):
         self.options = options
@@ -767,6 +812,7 @@ def blueBarsColorBoxFunction(self):
     else:
         animationColors.blue = standard.blue
     GUI.preview_colors.update(None)
+    GUI.blueBarsColorSample.currentColor = animationColors.blue
 
 def redBarsColorBoxFunction(self):
     if self.text == "Set":
@@ -774,6 +820,7 @@ def redBarsColorBoxFunction(self):
     else:
         animationColors.red = standard.red
     GUI.preview_colors.update(None)
+    GUI.RedBarsColorSample.currentColor = animationColors.red
 
 def greenBarsColorBoxFunction(self):
     if self.text == "Set":
@@ -781,6 +828,7 @@ def greenBarsColorBoxFunction(self):
     else:
         animationColors.green = standard.green
     GUI.preview_colors.update(None)
+    GUI.greenBarsColorSample.currentColor = animationColors.green
 
 def baseBarsColorBoxFunction(self):
     if self.text == "Set":
@@ -788,6 +836,7 @@ def baseBarsColorBoxFunction(self):
     else:
         animationColors.grey = standard.grey
     GUI.preview_colors.update(None)
+    GUI.BaseBarsColorSample.currentColor = animationColors.grey
 
 def backgroundColorBoxFunction(self):
     if self.text == "Set":
@@ -795,6 +844,7 @@ def backgroundColorBoxFunction(self):
     else:
         animationColors.background = standard.background
     GUI.preview_colors.update(None)
+    GUI.backBarsColorSample.currentColor = animationColors.background
 
 def textInBarsColorBoxFunction(self):
     if self.text == "Set":
@@ -802,6 +852,7 @@ def textInBarsColorBoxFunction(self):
     else:
         animationColors.text = standard.black
     GUI.preview_colors.update(None)
+    GUI.textBarsColorSample.currentColor = animationColors.text
 
 # Global Settings - used for animation generation
 numBars = 0
@@ -840,7 +891,7 @@ class GUI:
     delayX10Box = BoxWithText("Increase delay", (int((100/900)*width), int(((620+50*0)/900)*width), 60, 50), "x10", "x1", delayX10BoxFunction,side_text=True)
     includeSettingsInOutputBox = BoxWithText("GUI in output", (int(((100/900)/900)*width), int((620+50*1/1200)*height), 95, 50), "Include", "Exclude", includeSettingsInOutputBoxFunction,side_text=True)
     showValueInBarsBox = BoxWithText("Display value in bars", (int(((100/900)/900)*width), int(((620+50*1)/1200)*height), 95, 50), "Include", "Exclude", showValueInBarsBox,side_text=True)
-    outputFormatBox = DropdownBox('Output Format', (int((700/900)*width), int((500/1200)*height), 140, 50), baseFont, standard.grey,side_text=True)
+    outputFormatBox = DropdownBox('Output Format', (int((800/900)*width), int((700/1200)*height), 140, 50), baseFont, standard.grey,side_text=True)
 
 
     #Color picking - sliders
@@ -854,11 +905,18 @@ class GUI:
     BaseBarsColorBox = BoxWithText("Normal bars",(int((160/900)*width),int(((820+60*3)/1200)*height),50,50),"Set","Reset",baseBarsColorBoxFunction,side_text=True)
     textInBarsColorBox = BoxWithText("Text in bars",(int((160/900)*width),int(((820+60*4)/1200)*height),50,50),"Set","Reset",textInBarsColorBoxFunction,side_text=True)
     backgroundColorBox = BoxWithText("Background",(int((160/900)*width),int(((820+60*5)/1200)*height),50,50),"Set","Reset",backgroundColorBoxFunction,side_text=True)
+    # Color picking - set/reset color sample rectangles
+    blueBarsColorSample = ColorSampleRectangle(name="blueBars", rect=(int((160/900)*width),int(((830+60*0)/1200)*height), 20, 20),color=animationColors.blue,outlineColor=standard.black)
+    RedBarsColorSample = ColorSampleRectangle(name="redBars", rect=(int((160 / 900) * width), int(((830 + 60 * 1) / 1200) * height), 20, 20), color=standard.red,outlineColor=standard.black)
+    greenBarsColorSample = ColorSampleRectangle(name="greenBars", rect=(int((160 / 900) * width), int(((830 + 60 * 2) / 1200) * height), 20, 20), color=standard.green,outlineColor=standard.black)
+    BaseBarsColorSample = ColorSampleRectangle(name="baseBars", rect=(int((160 / 900) * width), int(((830 + 60 * 3) / 1200) * height), 20, 20), color=standard.grey,outlineColor=standard.black)
+    textBarsColorSample = ColorSampleRectangle(name="textBars", rect=(int((160 / 900) * width), int(((830 + 60 * 4) / 1200) * height), 20, 20), color=standard.black,outlineColor=standard.black)
+    backBarsColorSample = ColorSampleRectangle(name="backBars", rect=(int((160 / 900) * width), int(((830 + 60 * 5) / 1200) * height), 20, 20), color=standard.white,outlineColor=standard.black)
     #Sample animation for choosing color - included in slidersColorGroup
     preview_colors = sampleSortAnimation((int((600/900)*width),int(((850+30*4-10)/1200)*height), 255,90))
 
     # Text data group - only exists for displaying data
-    estimatedAnimationTimeBox = justText(f"Estimated playtime for animation: sec",standard.grey,(int((550/900)*width), int((1100/1200)*height), 140, 50))
+    estimatedAnimationTimeBox = justText(f"Estimated playtime for animation: sec",standard.grey,(int((300/900)*width), int((1100/1200)*height), 140, 50))
 
     #Groups
     # Very important, objects must be in order!
@@ -866,9 +924,10 @@ class GUI:
     # Outline order is: Render upper line (t/f), Render lower line (t/f), Should line cover entire width of program? (t/f)
     advancedGroup = Group((int((100/900)*width),int((600/1200)*height),int((0/900)*width),int((50/1200)*height)),(True,True,True),title="",objectFormatting="Vertical",item_collisions = [],if_different_offset=outputFormatBox,a = delayX10Box,b = includeSettingsInOutputBox,c = showValueInBarsBox,d=outputFormatBox)
     slidersColorGroup = Group((int((600/900)*width),int((850/1200)*height),int((255/900)*width),int((30/1200)*height)),(False,True,False),title = "RGB color selector",objectFormatting="Vertical",item_collisions = [],if_different_offset=None,a = P1_colorPickerBox,b = P2_colorPickerBox,c = P3_colorPickerBox,d = preview_colors)
-    setResetColorGroup = Group((int((160/900)*width),int((820/1200)*height),int((50/900)*width),int((50/1200)*height)),(False,True,False), title = "Color for",objectFormatting="Vertical",item_collisions = [],if_different_offset=None,a = BlueBarsColorBox, b = RedBarsColorBox,c = greenBarsColorBox, d = BaseBarsColorBox, e = textInBarsColorBox, f = backgroundColorBox)
+    setResetColorGroup = Group((int((50/900)*width),int((820/1200)*height),int((50/900)*width),int((50/1200)*height)),(False,False,False), title = "Color for",objectFormatting="Vertical",item_collisions = [],if_different_offset=[blueBarsColorSample,RedBarsColorSample,greenBarsColorSample,BaseBarsColorSample,textBarsColorSample,backBarsColorSample],
+                               a = BlueBarsColorBox, b = RedBarsColorBox,c = greenBarsColorBox, d = BaseBarsColorBox, e = textInBarsColorBox, f = backgroundColorBox,g = blueBarsColorSample,h = RedBarsColorSample,j = greenBarsColorSample,k = BaseBarsColorSample,l = textBarsColorSample,m = backBarsColorSample)
     basicGroup = Group((int((30/900)*width),int((510/1200)*height),int((50/900)*width),int((50/1200)*height)),(False,False,False),title="",objectFormatting="Horizontal",item_collisions = [playButton,stopButton],if_different_offset=None,a = sizeBox,b = loopBox,c = delayBox,d = algorithmBox,e=playButton,f=stopButton)
-    textDataGroup = Group((int((550/900)*width),int((1100/1200)*height),int((140/900)*width),int((50/1200)*height)),(False,True,False),title="",objectFormatting="Vertical",item_collisions = [],if_different_offset=None,a = estimatedAnimationTimeBox)
+    textDataGroup = Group((int((300/900)*width),int((1150/1200)*height),int((140/900)*width),int((50/1200)*height)), (False,False,False), title="", objectFormatting="Vertical", item_collisions = [], if_different_offset=None, a = estimatedAnimationTimeBox)
 
 
     #Add ref to all elements in list.
@@ -876,7 +935,10 @@ class GUI:
                            delayX10Box, includeSettingsInOutputBox, showValueInBarsBox, outputFormatBox,
                            P1_colorPickerBox,P2_colorPickerBox,P3_colorPickerBox,advancedGroup,
                            slidersColorGroup,preview_colors,BlueBarsColorBox,RedBarsColorBox,BaseBarsColorBox,
-                           textInBarsColorBox,backgroundColorBox,setResetColorGroup,greenBarsColorBox,basicGroup,estimatedAnimationTimeBox])
+                           textInBarsColorBox,backgroundColorBox,setResetColorGroup,greenBarsColorBox,basicGroup,
+                           estimatedAnimationTimeBox,blueBarsColorSample,RedBarsColorSample,greenBarsColorSample,
+                           BaseBarsColorSample,textBarsColorSample,backBarsColorSample,textDataGroup])
+
 def updateWidgets(event):
     # Instead of looping
     for aBox in GUI.ListOfAllGUIElements:
