@@ -255,7 +255,7 @@ class Group:
                 # Place all text 10 pix from left, top = 10px + height + 10px
                 # Remember to account for any labels
         else:
-            printToMainLog(3,f"Some group ({group.items}) had config for group other than Vertical or Horizontal")
+            printToMainLog(3,f"Some group ({self.items}) had config for group other than Vertical or Horizontal")
             printToMainLog(3, "This may cause incorrect GUI")
 
     def findItemsAtSimilarHeight(self):
