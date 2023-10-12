@@ -26,14 +26,15 @@ Contributions are welcome.
 
 ## Using the application
 
-### Installation Windows (10+) (beta)
+### Installation Windows (10+) (beta, now with support for custom colors!)
 - Download [zip](https://github.com/thestar19/Animation-Generator-for-Sorting-Algorithms/raw/main/bin/Animation-Generator-for-Sorting-Algorithms_beta.zip) file from bin folder
-- Extract content
-- Run main.exe
+- Extract content in zip file
+- Doubleclick on main.exe
   
-Some features may not yet be implemented in the Windows version (eg terminal mode, special colors and benchmark).
-Further, it is also possible to run the program in python3 in Windows without the zip file by modifying the code.
+Some features may not yet be implemented in the Windows version.
+Further, it is also possible to run the program in Windows without the exe file by modifying the code, installing dependencies and using python3.
 
+To keep terminal window alive after running main.exe, create a separate cmd window and run `cmd /k main.exe`
 
 ### Installation Ubuntu
 Only tested in Ubuntu x64 22.04.1-desktop
