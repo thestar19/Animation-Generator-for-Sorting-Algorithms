@@ -556,12 +556,13 @@ def validateInput(type,input):
 @dataclass
 class TerminalOptions:
     output_format:str = "GIF"
-    output_delay:int = 1
+    output_delay:int = 20
     output_size:int = 100
     add_numbers_to_bars:bool = False
     output_loops:int = 0
     output_alg:str = "insertion"
     benchmark:bool = False
+    custom_res:(int,int) = (900, 1200)
 
 
 def analyzeInputsArgs(available_args):
@@ -611,6 +612,11 @@ def analyzeInputsArgs(available_args):
         elif inst == "-bench":
             print(f"Incorrect args, -bench value {value} is not true or false")
             sys.exit(0)
+        elif inst == "-custom_res" and 900 <= int(value.split("x")[0]) <= 3840 and 1200-740 <= int(value.split("x")[1]) <= 2160-740:
+            options.custom_res = (int(value.split("x")[0]),int(value.split("x")[1]))
+        elif inst == "-custom_res":
+            print(f"Incorrect args, -custom_res value {value} is not 900x1200 <= WxH <= 3840x2160")
+            sys.exit(0)
         isInt, newValue = validateInput("int", value)
         if isInt and inst in "-d -s -l":
             # Check for delay value
@@ -637,6 +643,7 @@ def analyzeInputsArgs(available_args):
     print(f"    Number of elements in list to sort={options.output_size}")
     print(f"    Include numbers in bars={options.add_numbers_to_bars}")
     print(f"    Sorting alg={options.output_alg}")
+    print(f"    Animation resolution={options.custom_res}")
     if options.output_format == "GIF":
         print(f"    Number of loops={options.output_loops}")
     return options
@@ -715,7 +722,12 @@ if __name__ == '__main__':
             # For terminal mode, having no display thing pop up is a good feature.
             putenv('SDL_VIDEODRIVER', 'fbcon')
             environ["SDL_VIDEODRIVER"] = "dummy"
+            #Write custom res
+            f = open("CUSTOM_RES.txt", "w+")
+            f.write(f"{shell_options.custom_res[1]},{shell_options.custom_res[0]}")
+            f.close()
             import display as display
+            remove("CUSTOM_RES.txt")
             display.init()
             numbers = [randint(10, 400) for i in range(shell_options.output_size)]  # random list to be sorted
             alg_iterator = algorithmsDict[shell_options.output_alg](numbers, 0, shell_options.output_size - 1)  # initialize iterator
@@ -724,7 +736,7 @@ if __name__ == '__main__':
             display.GUI.algorithmBox.add_options(list(algorithmsDict.keys()))
             display.GUI.outputFormatBox.add_options(CURRENT_OUTPUT_FORMATS)
             display.numBars = shell_options.output_size
-            counter_for_number_pictures_created,_ = createPicturesForOutput(True,0,0,numbers,alg_iterator,(900, 400))
+            counter_for_number_pictures_created,_ = createPicturesForOutput(True,0,0,numbers,alg_iterator,(shell_options.custom_res[0], shell_options.custom_res[1]))
             if shell_options.output_format == "GIF":
                 createGIF(counter_for_number_pictures_created,SCREENSHOT_FILENAME,shell_options.output_delay,shell_options.output_loops,True)
             else:
